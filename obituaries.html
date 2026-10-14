@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Obituaries | Everlight Memorials</title>
+  <meta name="description" content="Browse obituaries and pay your respects. Search by name or filter by county.">
+  <link rel="stylesheet" href="css/obituaries.css">
+</head>
+<body>
+
+  <!-- ============ Header ============ -->
+  <header class="site-header">
+    <div class="container nav">
+      <a class="logo" href="index.html">🕯️ Ever<span>light</span></a>
+      <button class="menu-toggle" aria-label="Toggle menu" aria-expanded="false">☰</button>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="obituaries.html" class="active">Obituaries</a></li>
+        <li><a href="index.html#services">Services</a></li>
+        <li><a href="submit.html" class="nav-cta">Post an obituary</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <!-- ============ Page hero ============ -->
+  <section class="page-hero">
+    <div class="container">
+      <p class="page-hero__eyebrow">Obituaries</p>
+      <h1>Find an obituary</h1>
+      <p>Search by name or filter by county to pay your respects and leave a message of comfort.</p>
+    </div>
+  </section>
+
+  <!-- ============ Main ============ -->
+  <main>
+    <div class="container">
+
+      <!-- Search panel -->
+      <div class="search-panel">
+        <div class="search-row">
+          <div class="field search-icon-field">
+            <label for="q">Search by name</label>
+            <input id="q" type="search" placeholder="e.g. Wanjiku, Otieno, Mwangi…" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="county">Filter by county</label>
+            <select id="county">
+              <option value="">All counties</option>
+            </select>
+          </div>
+          <button class="clear-btn" id="clear">Clear filters</button>
+        </div>
+      </div>
+
+      <!-- Results meta -->
+      <div class="results-meta">
+        <p class="results-count" id="count" aria-live="polite"><strong>—</strong> obituaries</p>
+      </div>
+
+      <!-- Grid -->
+      <div class="grid" id="list"></div>
+
+    </div>
+  </main>
+
+  <!-- ============ Footer ============ -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <h3>🕯️ Everlight Memorials</h3>
+          <p>A peaceful place to honour loved ones, share tributes and find comfort, wherever you are in the world.</p>
+        </div>
+        <div>
+          <h3>Explore</h3>
+          <ul>
+            <li><a href="obituaries.html">Obituaries</a></li>
+            <li><a href="submit.html">Post an obituary</a></li>
+            <li><a href="index.html#services">Services</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Contact</h3>
+          <ul>
+            <li>📞 +254 7XX XXX XXX</li>
+            <li>✉️ hello@everlight.example</li>
+            <li>📍 Nairobi, Kenya</li>
+          </ul>
+        </div>
+      </div>
+      <div class="copy">© <span id="year"></span> Everlight Memorials. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <script src="js/obituaries.js"></script>
+</body>
+</html>

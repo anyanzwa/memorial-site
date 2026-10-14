@@ -1,0 +1,27 @@
+// Sample obituaries. Replace with real data or a backend later.
+const OBITUARIES = [
+  {id:"grace-wanjiru-kamau",name:"Grace Wanjiru Kamau",born:"1948",died:"2026-08-12",age:78,county:"Nyeri",
+   summary:"A devoted mother, teacher and church elder who touched countless lives.",
+   story:"Grace spent over thirty years as a primary school teacher, shaping generations of children in Nyeri. She was a faithful member of her church choir, a loving mother of five and a grandmother of twelve. Her kindness, humour and quiet strength will be deeply missed.",
+   service:"Memorial service, 20 Aug 2026, 10:00 AM, PCEA Church, Nyeri",burial:"Burial, 21 Aug 2026, 11:00 AM, family home, Mathari",c1:"#2f4a6d",c2:"#1f2a3d"},
+  {id:"samuel-otieno-ochieng",name:"Samuel Otieno Ochieng",born:"1961",died:"2026-09-02",age:65,county:"Kisumu",
+   summary:"A hardworking fisherman-turned-businessman, loved by his community.",
+   story:"Samuel grew up on the shores of Lake Victoria and built a thriving fish distribution business from nothing. He mentored many young entrepreneurs and was known for his generosity and laughter. He leaves behind a wife, four children and many grandchildren.",
+   service:"Memorial service, 10 Sep 2026, 2:00 PM, Kisumu Catholic Cathedral",burial:"Burial, 11 Sep 2026, 12:00 PM, Kano, Kisumu",c1:"#7a5a2a",c2:"#3d2d14"},
+  {id:"mary-nduku-mutua",name:"Mary Nduku Mutua",born:"1955",died:"2026-09-18",age:71,county:"Machakos",
+   summary:"A loving grandmother whose kitchen and prayers welcomed everyone.",
+   story:"Mary was the heart of her family. Her home in Machakos was always open to relatives and neighbours, and nobody left without a meal and a prayer. She farmed, sang and told the best stories. Her legacy lives in every life she nurtured.",
+   service:"Prayer service, 26 Sep 2026, 3:00 PM, AIC Machakos",burial:"Burial, 27 Sep 2026, 10:00 AM, Kangundo",c1:"#4a6d5a",c2:"#1f3d2f"},
+  {id:"peter-kipchirchir-rono",name:"Peter Kipchirchir Rono",born:"1972",died:"2026-10-01",age:54,county:"Nakuru",
+   summary:"A dedicated engineer, devoted husband and father of three.",
+   story:"Peter worked for over twenty years designing water systems across the Rift Valley. He loved football, early morning runs and his family above all. Colleagues remember his patience and generosity with his time.",
+   service:"Memorial service, 9 Oct 2026, 11:00 AM, ACK Cathedral, Nakuru",burial:"Burial, 10 Oct 2026, 1:00 PM, Molo",c1:"#5b4a6d",c2:"#2a1f3d"},
+  {id:"fatuma-hassan-ali",name:"Fatuma Hassan Ali",born:"1950",died:"2026-10-06",age:76,county:"Mombasa",
+   summary:"A respected community matriarch and tireless charity volunteer.",
+   story:"Fatuma dedicated her life to serving others, running a free meal programme during Ramadan for more than two decades. She was a pillar of her neighbourhood in Mombasa and is survived by her children, grandchildren and a grateful community.",
+   service:"Janaza prayers, 7 Oct 2026, after Dhuhr, Mbaruk Mosque",burial:"Burial, 7 Oct 2026, Kikowani Cemetery",c1:"#2f6d6a",c2:"#1f3d3b"},
+  {id:"john-mwangi-njoroge",name:"John Mwangi Njoroge",born:"1939",died:"2026-10-09",age:87,county:"Kiambu",
+   summary:"A retired farmer and community elder, honoured for his wisdom.",
+   story:"John farmed coffee and dairy in Kiambu for over sixty years. As a respected elder he settled disputes, supported school fees for neighbours' children and never missed Sunday service. He leaves a large and loving family.",
+   service:"Memorial service, 16 Oct 2026, 10:00 AM, St. Andrew's Church, Kiambu",burial:"Burial, 17 Oct 2026, 11:00 AM, Limuru",c1:"#6d4a4a",c2:"#3d1f1f"}
+];

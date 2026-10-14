@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="css/styles.css">
+  <title>Post an Obituary | Everlight Memorials</title>
+</head>
+<body data-page="submit">
+  <div id="site-header"></div>
+
+  <main>
+    <section class="section">
+      <div class="container">
+        <p class="eyebrow">Post an obituary</p>
+        <h1>Honour your loved one</h1>
+        <p class="lead">
+          Fill in the details below. The preview on the right updates as you type.
+        </p>
+
+        <div id="notice" class="notice" role="status" style="margin-top:20px"></div>
+
+        <div class="two-col" style="margin-top:28px">
+          <!-- Form -->
+          <div class="panel">
+            <form id="submit-form" novalidate>
+              <div>
+                <label for="name">Full name of the departed *</label>
+                <input id="name" maxlength="80" required>
+                <div class="error"></div>
+              </div>
+
+              <div class="row">
+                <div>
+                  <label for="born">Date of birth *</label>
+                  <input id="born" type="date" required>
+                  <div class="error"></div>
+                </div>
+                <div>
+                  <label for="died">Date of passing *</label>
+                  <input id="died" type="date" required>
+                  <div class="error"></div>
+                </div>
+              </div>
+
+              <div>
+                <label for="s-county">Home county *</label>
+                <select id="s-county" required>
+                  <option value="">Select county</option>
+                  <option>Baringo</option>
+                  <option>Bomet</option>
+                  <option>Bungoma</option>
+                  <option>Busia</option>
+                  <option>Elgeyo Marakwet</option>
+                  <option>Embu</option>
+                  <option>Garissa</option>
+                  <option>Homa Bay</option>
+                  <option>Isiolo</option>
+                  <option>Kajiado</option>
+                  <option>Kakamega</option>
+                  <option>Kericho</option>
+                  <option>Kiambu</option>
+                  <option>Kilifi</option>
+                  <option>Kirinyaga</option>
+                  <option>Kisii</option>
+                  <option>Kisumu</option>
+                  <option>Kitui</option>
+                  <option>Kwale</option>
+                  <option>Laikipia</option>
+                  <option>Lamu</option>
+                  <option>Machakos</option>
+                  <option>Makueni</option>
+                  <option>Mandera</option>
+                  <option>Marsabit</option>
+                  <option>Meru</option>
+                  <option>Migori</option>
+                  <option>Mombasa</option>
+                  <option>Murang'a</option>
+                  <option>Nairobi</option>
+                  <option>Nakuru</option>
+                  <option>Nandi</option>
+                  <option>Narok</option>
+                  <option>Nyamira</option>
+                  <option>Nyandarua</option>
+                  <option>Nyeri</option>
+                  <option>Samburu</option>
+                  <option>Siaya</option>
+                  <option>Taita Taveta</option>
+                  <option>Tana River</option>
+                  <option>Tharaka Nithi</option>
+                  <option>Trans Nzoia</option>
+                  <option>Turkana</option>
+                  <option>Uasin Gishu</option>
+                  <option>Vihiga</option>
+                  <option>Wajir</option>
+                  <option>West Pokot</option>
+                </select>
+                <div class="error"></div>
+              </div>
+
+              <div>
+                <label for="story">Life story *</label>
+                <textarea id="story" maxlength="1500" required
+                  placeholder="Share their life, faith, family and legacy"></textarea>
+                <div class="error"></div>
+              </div>
+
+              <div>
+                <label for="service">Memorial service details</label>
+                <input id="service" placeholder="Date, time and venue">
+                <div class="error"></div>
+              </div>
+
+              <div>
+                <label for="burial">Burial details</label>
+                <input id="burial" placeholder="Date, time and place">
+                <div class="error"></div>
+              </div>
+
+              <h3 style="margin-top:10px">Your contact details</h3>
+
+              <div>
+                <label for="contact">Your name *</label>
+                <input id="contact" required>
+                <div class="error"></div>
+              </div>
+
+              <div class="row">
+                <div>
+                  <label for="email">Email *</label>
+                  <input id="email" type="email" required>
+                  <div class="error"></div>
+                </div>
+                <div>
+                  <label for="phone">Phone</label>
+                  <input id="phone" type="tel" placeholder="+254...">
+                  <div class="error"></div>
+                </div>
+              </div>
+
+              <button class="btn gold" type="submit">Publish obituary</button>
+            </form>
+          </div>
+
+          <!-- Live preview -->
+          <aside class="preview">
+            <div class="card" aria-label="Live preview">
+              <div class="portrait" style="--c1:#2f4a6d;--c2:#1f2a3d">
+                <span id="pv-init">—</span>
+              </div>
+              <div class="card-body">
+                <h3>🕊️ <span id="pv-name">Full name</span></h3>
+                <div class="dates" id="pv-dates"></div>
+                <p id="pv-story"></p>
+                <div class="meta" id="pv-county"></div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
