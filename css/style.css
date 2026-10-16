@@ -1118,6 +1118,106 @@ textarea { min-height: 120px; }
     max-height: 70vh;
     padding: 8px;
   }
+
+  /* ======================================================================
+     SUBMIT FORM — comfortable phone layout
+     ====================================================================== */
+
+  /* Form panel: tighter padding so fields get more width */
+  .panel {
+    padding: 18px 14px;
+  }
+
+  /* Section headings inside the form act as dividers */
+  .panel h3 {
+    margin: 26px 0 12px !important;    /* overrides inline style */
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+    font-size: 1.05rem;
+  }
+
+  /* First heading has no divider above it */
+  .panel h3:first-of-type {
+    margin-top: 4px !important;
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  /* Labels: clear, slightly smaller */
+  .panel label {
+    font-size: .88rem;
+    margin-bottom: 6px;
+    line-height: 1.4;
+  }
+
+  /* Hint text below file inputs */
+  .panel .small {
+    font-size: .78rem;
+    line-height: 1.5;
+    margin-bottom: 10px !important;
+  }
+
+  /* Inputs: bigger tap targets, no iOS auto-zoom on focus */
+  .panel input,
+  .panel select,
+  .panel textarea {
+    padding: 13px 14px;
+    font-size: 16px;                   /* 16px prevents iOS zoom */
+    min-height: 48px;
+  }
+
+  .panel textarea {
+    min-height: 150px;
+    line-height: 1.5;
+  }
+
+  /* File inputs: elegant dashed drop-zone look */
+  .panel input[type="file"] {
+    padding: 14px;
+    font-size: .85rem;
+    background: #faf7f1;
+    border: 1px dashed var(--line);
+    cursor: pointer;
+    min-height: auto;
+    transition: border-color .2s, background .2s;
+  }
+  .panel input[type="file"]:hover,
+  .panel input[type="file"]:focus {
+    border-color: var(--gold);
+    background: #fffdf8;
+    outline: none;
+  }
+
+  /* Error text under a field */
+  .panel .error {
+    font-size: .78rem;
+    margin-top: 4px;
+  }
+
+  /* Form field gaps a touch tighter */
+  .panel form {
+    gap: 14px;
+  }
+
+  /* Submit button: full width, comfortable to tap */
+  .panel form > .btn {
+    width: 100%;
+    padding: 15px 20px;
+    font-size: 1.05rem;
+    margin-top: 10px;
+  }
+
+  /* Preview card: shorter and centred so it doesn't dominate */
+  .sticky .card {
+    aspect-ratio: 3 / 2;
+    max-width: 340px;
+    margin: 0 auto;
+  }
+
+  /* Slightly more breathing room around the two-col wrapper */
+  .two-col {
+    gap: 24px !important;
+  }
 }
 
 
