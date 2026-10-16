@@ -3,50 +3,48 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="css/styles.css">
   <title>Post an Obituary | Everlight Memorials</title>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body data-page="submit">
-  <div id="site-header"></div>
 
-  <main>
-    <section class="section">
-      <div class="container">
-        <p class="eyebrow">Post an obituary</p>
-        <h1>Honour your loved one</h1>
-        <p class="lead">
-          Fill in the details below. The preview on the right updates as you type.
-        </p>
+<!-- HEADER -->
+<header class="header">
+  <div class="container nav">
+    <a class="logo" href="index.html">🕯️ Ever<span>light</span></a>
+    <button class="menu-button" aria-label="Menu">☰</button>
+    <ul class="menu">
+      <li><a href="index.html" >Home</a></li>
+      <li><a href="obituaries.html">Obituaries</a></li>
+      <li><a href="index.html#services">Services</a></li>
+      <li><a class="btn gold" href="submit.html">Post an obituary</a></li>
+    </ul>
+  </div>
+</header>
 
-        <div id="notice" class="notice" role="status" style="margin-top:20px"></div>
+<main>
+  <section class="section">
+    <div class="container">
+      <p class="eyebrow">Post an obituary</p>
+      <h1>Honour your loved one</h1>
+      <p>Fill in the details. The preview on the right updates as you type. Fields marked * are required.</p>
+      <div id="notice" class="notice" role="status"></div>
 
-        <div class="two-col" style="margin-top:28px">
-          <!-- Form -->
-          <div class="panel">
-            <form id="submit-form" novalidate>
-              <div>
-                <label for="name">Full name of the departed *</label>
-                <input id="name" maxlength="80" required>
-                <div class="error"></div>
-              </div>
+      <div class="two-col" style="margin-top:24px">
+        <div class="panel">
+          <form id="submit-form" novalidate>
 
-              <div class="row">
-                <div>
-                  <label for="born">Date of birth *</label>
-                  <input id="born" type="date" required>
-                  <div class="error"></div>
-                </div>
-                <div>
-                  <label for="died">Date of passing *</label>
-                  <input id="died" type="date" required>
-                  <div class="error"></div>
-                </div>
-              </div>
+            <div><label for="name">Full name of the departed *</label>
+              <input id="name" maxlength="80" required><div class="error"></div></div>
 
-              <div>
-                <label for="s-county">Home county *</label>
-                <select id="s-county" required>
-                  <option value="">Select county</option>
+            <div class="row">
+              <div><label for="born">Date of birth *</label><input id="born" type="date" required><div class="error"></div></div>
+              <div><label for="died">Date of passing *</label><input id="died" type="date" required><div class="error"></div></div>
+            </div>
+
+            <div><label for="county">Home county *</label>
+              <select id="county" required>
+                <option value="">Select county</option>
                   <option>Baringo</option>
                   <option>Bomet</option>
                   <option>Bungoma</option>
@@ -94,76 +92,75 @@
                   <option>Vihiga</option>
                   <option>Wajir</option>
                   <option>West Pokot</option>
-                </select>
-                <div class="error"></div>
-              </div>
+              </select><div class="error"></div></div>
 
-              <div>
-                <label for="story">Life story *</label>
-                <textarea id="story" maxlength="1500" required
-                  placeholder="Share their life, faith, family and legacy"></textarea>
-                <div class="error"></div>
-              </div>
+            <div><label for="photo">Photo of the departed (JPG or PNG, optional, max 5 MB)</label>
+              <input id="photo" type="file" accept="image/*"><div class="error"></div></div>
 
-              <div>
-                <label for="service">Memorial service details</label>
-                <input id="service" placeholder="Date, time and venue">
-                <div class="error"></div>
-              </div>
+            <div><label for="story">Life story *</label>
+              <textarea id="story" maxlength="1500" required placeholder="Share their life, faith, family and legacy"></textarea><div class="error"></div></div>
 
-              <div>
-                <label for="burial">Burial details</label>
-                <input id="burial" placeholder="Date, time and place">
-                <div class="error"></div>
-              </div>
+            <div><label for="service">Memorial service details</label><input id="service" placeholder="Date, time and venue"><div class="error"></div></div>
+            <div><label for="burial">Burial details</label><input id="burial" placeholder="Date, time and place"><div class="error"></div></div>
 
-              <h3 style="margin-top:10px">Your contact details</h3>
+            <div><label for="program">Funeral program (PDF, optional, max 5 MB)</label>
+              <p class="small" style="margin:0 0 6px">It will be shown on the memorial page so visitors can scroll through it, and they can also download it.</p>
+              <input id="program" type="file" accept="application/pdf"><div class="error"></div></div>
 
-              <div>
-                <label for="contact">Your name *</label>
-                <input id="contact" required>
-                <div class="error"></div>
-              </div>
-
-              <div class="row">
-                <div>
-                  <label for="email">Email *</label>
-                  <input id="email" type="email" required>
-                  <div class="error"></div>
-                </div>
-                <div>
-                  <label for="phone">Phone</label>
-                  <input id="phone" type="tel" placeholder="+254...">
-                  <div class="error"></div>
-                </div>
-              </div>
-
-              <button class="btn gold" type="submit">Publish obituary</button>
-            </form>
-          </div>
-
-          <!-- Live preview -->
-          <aside class="preview">
-            <div class="card" aria-label="Live preview">
-              <div class="portrait" style="--c1:#2f4a6d;--c2:#1f2a3d">
-                <span id="pv-init">—</span>
-              </div>
-              <div class="card-body">
-                <h3>🕊️ <span id="pv-name">Full name</span></h3>
-                <div class="dates" id="pv-dates"></div>
-                <p id="pv-story"></p>
-                <div class="meta" id="pv-county"></div>
-              </div>
+            <h3 style="margin-top:14px">Contribution to family <span class="small">(optional)</span></h3>
+            <p class="small">Fill this in only if the family welcomes contributions. Leave blank to hide it.</p>
+            <div class="row">
+              <div><label for="mpesa-number">M-Pesa number</label><input id="mpesa-number" type="tel" placeholder="+254 7XX XXX XXX"><div class="error"></div></div>
+              <div><label for="mpesa-name">M-Pesa registered name</label><input id="mpesa-name" maxlength="60"><div class="error"></div></div>
             </div>
-          </aside>
+            <div class="row">
+              <div><label for="bank-name">Bank</label><input id="bank-name" maxlength="60" placeholder="e.g. KCB Bank"><div class="error"></div></div>
+              <div><label for="bank-account">Account number</label><input id="bank-account" maxlength="40"><div class="error"></div></div>
+            </div>
+            <div><label for="bank-holder">Account holder name</label><input id="bank-holder" maxlength="80"><div class="error"></div></div>
+            <div><label for="contribution-contact">Family contact for contributions</label><input id="contribution-contact" maxlength="100" placeholder="e.g. 0712 345 678 (Peter)"><div class="error"></div></div>
+
+            <h3 style="margin-top:14px">Your contact details</h3>
+            <div><label for="contact">Your name *</label><input id="contact" required><div class="error"></div></div>
+            <div class="row">
+              <div><label for="email">Email *</label><input id="email" type="email" required><div class="error"></div></div>
+              <div><label for="phone">Phone</label><input id="phone" type="tel" placeholder="+254..."><div class="error"></div></div>
+            </div>
+
+            <button class="btn gold" type="submit">Publish obituary</button>
+          </form>
         </div>
+
+        <!-- LIVE PREVIEW -->
+        <aside class="sticky">
+          <div class="card">
+            <div class="photo"><img id="pv-img" alt="" hidden><span id="pv-init">—</span></div>
+            <div class="card-body">
+              <h3 id="pv-name">Full name</h3>
+              <p class="small" id="pv-dates"></p>
+              <p class="small summary" id="pv-story"></p>
+              <span class="meta" id="pv-county"></span>
+            </div>
+          </div>
+        </aside>
       </div>
-    </section>
-  </main>
+    </div>
+  </section>
+</main>
 
-  <div id="site-footer"></div>
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div><h3>🕯️ Everlight Memorials</h3><p>A peaceful place to honour loved ones and share tributes.</p></div>
+      <div><h3>Explore</h3><ul><li><a href="obituaries.html">Obituaries</a></li><li><a href="submit.html">Post an obituary</a></li><li><a href="index.html#services">Services</a></li></ul></div>
+      <div><h3>Contact</h3><ul><li>📞 +254 7XX XXX XXX</li><li>✉️ hello@everlight.example</li><li>📍 Nairobi, Kenya</li></ul></div>
+    </div>
+    <div class="copy">© <span id="year"></span> Everlight Memorials. All rights reserved.</div>
+  </div>
+</footer>
 
-  <script src="js/data.js"></script>
-  <script src="js/main.js"></script>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>

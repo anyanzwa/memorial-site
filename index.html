@@ -3,168 +3,170 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="stylesheet" href="css/styles.css">
   <title>Everlight Memorials | Honouring loved ones across Kenya</title>
-  <meta name="description" content="Publish obituaries, share tributes and find comfort. A dignified online memorial space for Kenyan families.">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body data-page="home">
-  <div id="site-header"></div>
 
-  <main>
-    <!-- ====================================================================
-         Hero with crossfading slideshow
-         ==================================================================== -->
-    <section class="hero">
-      <!-- Slideshow layers (behind the content) -->
-      <div class="hero-slides" aria-hidden="true">
-        <div class="hero-slide is-active">
-          <img src="images/casket-2.jpg" alt="">
-        </div>
-        <div class="hero-slide">
-          <img src="images/casket-3.jpg" alt="">
-        </div>
-        <div class="hero-slide">
-          <img src="images/casket-picture.jpg" alt="">
-        </div>
+<!-- HEADER -->
+<header class="header">
+  <div class="container nav">
+    <a class="logo" href="index.html">🕯️ Ever<span>light</span></a>
+    <button class="menu-button" aria-label="Menu">☰</button>
+    <ul class="menu">
+      <li><a href="index.html" class="active">Home</a></li>
+      <li><a href="obituaries.html" >Obituaries</a></li>
+      <li><a href="index.html#services">Services</a></li>
+      <li><a class="btn gold" href="submit.html">Post an obituary</a></li>
+    </ul>
+  </div>
+</header>
+
+<main>
+  <!-- HERO: slides use pictures from the images folder. If a picture is missing, the blue background shows. -->
+  <section class="hero">
+    <div class="slide show" style="background-image:url('images/casket-picture.jpg')"></div>
+    <div class="slide" style="background-image:url('images/casket-2.jpg')"></div>
+    <div class="slide" style="background-image:url('images/casket-3.jpg')"></div>
+    <div class="container">
+      <p class="eyebrow">A place of comfort and remembrance</p>
+      <h1>Every life deserves to be remembered.</h1>
+      <p>Publish an obituary, gather tributes from family and friends near and far, and keep precious memories alive with dignity.</p>
+      <div class="buttons">
+        <a class="btn gold" href="submit.html">Post an obituary</a>
+        <a class="btn light" href="obituaries.html">Find an obituary</a>
       </div>
+    </div>
+    <div class="dots">
+      <button class="show" aria-label="Slide 1"></button>
+      <button aria-label="Slide 2"></button>
+      <button aria-label="Slide 3"></button>
+    </div>
+  </section>
 
-      <!-- Dark overlay for text readability -->
-      <div class="hero-overlay" aria-hidden="true"></div>
-
-      <!-- Hero content -->
-      <div class="container">
-        <p class="eyebrow">A place of comfort and remembrance</p>
-        <h1>Every life deserves to be remembered.</h1>
-        <p>
-          Publish an obituary, gather tributes from family and friends near and far,
-          and keep precious memories alive with dignity.
-        </p>
-        <div class="actions">
-          <a class="btn gold" href="submit.html">Post an obituary</a>
-          <a class="btn ghost" href="obituaries.html">Find an obituary</a>
-        </div>
+  <!-- RECENT OBITUARIES (filled in by app.js) -->
+  <section class="section">
+    <div class="container">
+      <div class="center">
+        <p class="eyebrow">Recent obituaries</p>
+        <h2>Remembering them with love</h2>
+        <p>Search for a loved one or leave a message of comfort.</p>
       </div>
+      <div class="grid" id="recent"></div>
+      <p class="center" style="margin-top:28px"><a class="btn outline" href="obituaries.html">View all obituaries</a></p>
+    </div>
+  </section>
 
-      <!-- Slide indicators -->
-      <div class="hero-dots" role="tablist" aria-label="Hero slides">
-        <button class="hero-dot is-active" data-slide="0" aria-label="Slide 1"></button>
-        <button class="hero-dot"           data-slide="1" aria-label="Slide 2"></button>
-        <button class="hero-dot"           data-slide="2" aria-label="Slide 3"></button>
-      </div>
-    </section>
+  <!-- SERVICES -->
+  <section class="section white" id="services">
+    <div class="container">
+      <div class="center"><p class="eyebrow">What we offer</p><h2>Compassionate services to honour every life</h2></div>
 
-    <!-- Recent obituaries -->
-    <section class="section">
-      <div class="container">
-        <div class="center">
-          <p class="eyebrow">Recent obituaries</p>
-          <h2>Remembering them with love</h2>
-          <p class="lead">
-            We understand it is not always possible to pay respects in person.
-            Search for a loved one or leave a message of comfort.
-          </p>
-        </div>
-        <div class="grid" id="recent" style="margin-top:36px"></div>
-        <p class="center" style="margin-top:32px">
-          <a class="btn ghost" href="obituaries.html">View all obituaries</a>
-        </p>
-      </div>
-    </section>
-
-    <!-- Services -->
-    <section class="section alt" id="services">
-      <div class="container">
-        <div class="center">
-          <p class="eyebrow">What we offer</p>
-          <h2>Compassionate services to honour every life</h2>
-          <p class="lead">
-            Everything a family needs to remember well — from the first announcement to the last tribute.
-          </p>
-        </div>
-
-        <div class="grid services-grid" style="margin-top:36px">
-          <article class="service" data-tone="dove">
-            <div class="icon" aria-hidden="true"></div>
+      <!-- To use your own photo, replace the file in images/services/ (same name) or change the src below -->
+      <div class="services-grid">
+        <article class="service">
+          <div class="service-img">
+            <img src="images/candle-1.jpg" alt="" loading="lazy">
+            <span class="service-num">01</span>
+          </div>
+          <div class="service-body">
             <h3>Online obituaries</h3>
-            <p>Announce a passing with photos, service details and a short life story, accessible to everyone, everywhere.</p>
-          </article>
+            <p>Announce a passing with photos, service details and a short life story, open to everyone, everywhere.</p>
+          </div>
+        </article>
 
-          <article class="service" data-tone="candle">
-            <div class="icon" aria-hidden="true"></div>
+        <article class="service">
+          <div class="service-img">
+            <img src="images/bird 2.jpg" alt="" loading="lazy">
+            <span class="service-num">02</span>
+          </div>
+          <div class="service-body">
             <h3>Digital tributes</h3>
-            <p>Friends and relatives share prayers, memories and light candles on a living memorial page.</p>
-          </article>
+            <p>Friends and relatives share prayers and memories, and light candles on a living memorial page.</p>
+          </div>
+        </article>
 
-          <article class="service" data-tone="letter">
-            <div class="icon" aria-hidden="true"></div>
+        <article class="service">
+          <div class="service-img">
+            <img src="images/comfort-inspiration.jpg" alt="" loading="lazy">
+            <span class="service-num">03</span>
+          </div>
+          <div class="service-body">
             <h3>Comfort and inspiration</h3>
             <p>Faith-inspired reflections and verses to strengthen those who mourn.</p>
-          </article>
+          </div>
+        </article>
 
-          <article class="service" data-tone="family">
-            <div class="icon" aria-hidden="true"></div>
+        <article class="service">
+          <div class="service-img">
+            <img src="images/remembrance.jpg" alt="" loading="lazy">
+            <span class="service-num">04</span>
+          </div>
+          <div class="service-body">
             <h3>Family remembrance</h3>
             <p>Bring relatives together to share photos, stories and heritage in one place.</p>
-          </article>
+          </div>
+        </article>
 
-          <article class="service" data-tone="flower">
-            <div class="icon" aria-hidden="true"></div>
+        <article class="service">
+          <div class="service-img">
+            <img src="images/celebrating a life.jpg" alt="" loading="lazy">
+            <span class="service-num">05</span>
+          </div>
+          <div class="service-body">
             <h3>Celebrating a life</h3>
             <p>Mark birthdays and anniversaries with gratitude and shared stories.</p>
-          </article>
+          </div>
+        </article>
 
-          <article class="service" data-tone="dawn">
-            <div class="icon" aria-hidden="true"></div>
+        <article class="service">
+          <div class="service-img">
+            <img src="images/hope.jpg" alt="" loading="lazy">
+            <span class="service-num">06</span>
+          </div>
+          <div class="service-body">
             <h3>Hope and healing</h3>
             <p>Gentle guidance and real stories of strength through the journey of grief.</p>
-          </article>
-        </div>
+          </div>
+        </article>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- Testimonials -->
-    <section class="section">
-      <div class="container">
-        <div class="center">
-          <p class="eyebrow">Kind words</p>
-          <h2>What families say</h2>
-          <p class="lead">Quiet messages from the people we've walked alongside.</p>
-        </div>
-
-        <div class="grid quotes-grid" style="margin-top:36px">
-          <figure class="quote" data-tone="machakos">
-            <blockquote>“Our relatives abroad could share memories and prayers. It was a true blessing.”</blockquote>
-            <figcaption>– A grateful family, <span>Machakos</span></figcaption>
-          </figure>
-
-          <figure class="quote" data-tone="kilifi">
-            <blockquote>“This helped us honour our friend with the dignity he deserved.”</blockquote>
-            <figcaption>– A friend, <span>Kilifi</span></figcaption>
-          </figure>
-
-          <figure class="quote" data-tone="nairobi">
-            <blockquote>“The reflections reminded me that grief can also be a journey of faith and healing.”</blockquote>
-            <figcaption>– A reader, <span>Nairobi</span></figcaption>
-          </figure>
-        </div>
+  <!-- TESTIMONIALS -->
+  <section class="section">
+    <div class="container">
+      <div class="center"><p class="eyebrow">Kind words</p><h2>What families say</h2></div>
+      <div class="grid" style="margin-top:30px">
+        <div class="quote">“Our relatives abroad could share memories and prayers. It was a true blessing.”<p class="small">– A grateful family, Machakos</p></div>
+        <div class="quote">“This helped us honour our friend with the dignity he deserved.”<p class="small">– A friend, Kilifi</p></div>
+        <div class="quote">“The reflections reminded me that grief can also be a journey of faith.”<p class="small">– A reader, Nairobi</p></div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- Call to action -->
-    <section class="section alt">
-      <div class="container center">
-        <h2>Ready to honour your loved one?</h2>
-        <p class="lead">It takes only a few minutes to publish a beautiful, lasting tribute.</p>
-        <p style="margin-top:20px">
-          <a class="btn gold" href="submit.html">Post an obituary</a>
-        </p>
-      </div>
-    </section>
-  </main>
+  <section class="section white center">
+    <div class="container">
+      <h2>Ready to honour your loved one?</h2>
+      <p>It takes only a few minutes to publish a lasting tribute.</p>
+      <a class="btn gold" href="submit.html">Post an obituary</a>
+    </div>
+  </section>
+</main>
 
-  <div id="site-footer"></div>
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div><h3>🕯️ Everlight Memorials</h3><p>A peaceful place to honour loved ones and share tributes.</p></div>
+      <div><h3>Explore</h3><ul><li><a href="obituaries.html">Obituaries</a></li><li><a href="submit.html">Post an obituary</a></li><li><a href="index.html#services">Services</a></li></ul></div>
+      <div><h3>Contact</h3><ul><li>📞 +254 7XX XXX XXX</li><li>✉️ hello@everlight.example</li><li>📍 Nairobi, Kenya</li></ul></div>
+    </div>
+    <div class="copy">© <span id="year"></span> Everlight Memorials. All rights reserved.</div>
+  </div>
+</footer>
 
-  <script src="js/data.js"></script>
-  <script src="js/main.js"></script>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>

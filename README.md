@@ -1,14 +1,16 @@
-# Everlight Memorials: starter website
+# Everlight Memorials: simple version
+
+Open index.html in a browser. Nothing to install.
 
 Files
-- index.html: home page
-- obituaries.html: searchable list of obituaries
-- obituary.html: single memorial page (candles, tributes, share)
-- submit.html: post-an-obituary form with live preview
-- css/styles.css: all styling (colours are CSS variables at the top)
-- js/data.js: sample obituaries (replace with real data)
-- js/main.js: header/footer, search, forms, tributes
+- index.html       home page
+- obituaries.html  search and filter obituaries
+- obituary.html    one memorial page (candles, tributes, program, contributions)
+- submit.html      post an obituary (PDF upload, contribution details, live preview)
+- css/style.css    all styling, in 12 labelled sections (colours at the top)
+- js/data.js       sample obituaries
+- js/app.js        all the JavaScript, in 9 labelled sections
+- images/          your pictures (see README.txt inside)
 
-Run it: open index.html in a browser. No installation needed.
-Note: submissions, candles and tributes are saved in the visitor's browser (localStorage) for demo purposes. A real launch needs a backend or database.
-To rebrand: change the name "Everlight" in js/main.js and the HTML titles, and edit the colours in styles.css.
+Demo note: saved obituaries, tributes and candles live in the visitor's own browser.
+A real launch needs a database and a server.
