@@ -1063,13 +1063,56 @@ textarea { min-height: 120px; }
   .card h3 { font-size: .95rem; }
   .card .summary { display: none; }
 
+  /* --- Services: compact horizontal cards on phones --- */
   .services-grid {
     grid-template-columns: 1fr;
-    gap: 18px;
+    gap: 14px;
     margin-top: 24px;
   }
 
-  .service-body { padding: 18px 18px 22px; }
+  .service {
+    display: grid;
+    grid-template-columns: 104px 1fr;
+    align-items: stretch;
+  }
+
+  .service-img {
+    aspect-ratio: auto;
+    height: 100%;
+    min-height: 104px;
+  }
+
+  /* The soft fade at the bottom of the image doesn't work on a
+     tall narrow thumbnail, so we hide it on phones. */
+  .service-img::after {
+    display: none;
+  }
+
+  .service-num {
+    width: 26px;
+    height: 26px;
+    font-size: .68rem;
+    top: 6px;
+    left: 6px;
+  }
+
+  .service-body {
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .service-body h3 {
+    font-size: .98rem;
+    margin-bottom: 4px;
+  }
+
+  .service-body p {
+    font-size: .82rem;
+    line-height: 1.5;
+    margin: 0;
+  }
 
   .program-viewer {
     max-height: 70vh;
