@@ -28,13 +28,16 @@
   --gold:   #bc7504;            /* accent colour */
   --line:   #e6dfd1;            /* borders */
 
-  --serif:  Georgia, serif;
-  --sans:   system-ui, Arial, sans-serif;
+  /* Font stacks */
+  --serif:  Georgia, serif; 
+  --sans:   'Lexend', system-ui, Arial, sans-serif; /* UPDATED: Lexend added */
 
   /* Elegant font for the single obituary page.
      Falls back to Georgia if it can't load. */
   --script: "Cormorant Garamond", Georgia, "Times New Roman", serif;
 }
+  
+
 
 
 /* ==========================================================================
