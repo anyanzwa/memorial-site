@@ -274,6 +274,43 @@ a {
   padding: 60px 0;
 }
 
+.page-hero {
+  position: relative;
+  color: #fff;
+  padding: 100px 0 90px;
+  overflow: hidden;
+
+  /* Fallback gradient in case the image doesn't load */
+  background: linear-gradient(135deg, #1f2a3d, #2f4a6d);
+
+  /* The photo sits on top of the fallback */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Dark overlay so the white text stays readable */
+.page-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(20, 28, 45, .72),
+    rgba(20, 28, 45, .85)
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Content sits above the overlay */
+.page-hero .container {
+  position: relative;
+  z-index: 1;
+}
+
+.page-hero h1 { color: #fff; }
+
 .page-hero h1 { color: #fff; }
 
 
