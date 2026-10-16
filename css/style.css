@@ -946,6 +946,23 @@ textarea { min-height: 120px; }
    12. PHONES AND TABLETS
    ========================================================================== */
 @media (max-width: 820px) {
+
+  /* --- Hero: fill the screen and pin the image on scroll --- */
+  .hero {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: grid;
+    place-items: center;
+    padding: 60px 0;
+  }
+
+  .slide {
+    background-attachment: fixed;
+    background-size: cover;
+    background-position: center;
+  }
+
+  /* --- Menu --- */
   .menu-button { display: block; }
 
   .menu {
@@ -1059,7 +1076,11 @@ textarea { min-height: 120px; }
     padding: 8px;
   }
 }
-/* Powered-by credit line in the footer */
+
+
+/* ==========================================================================
+   Powered-by credit line in the footer
+   ========================================================================== */
 .powered-by {
   display: inline-block;
   margin-top: 6px;
