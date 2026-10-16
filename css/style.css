@@ -42,6 +42,32 @@
    ========================================================================== */
 * { box-sizing: border-box; }
 
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font: 700 1.4rem var(--serif);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.logo-img {
+  height: 42px;
+  width: auto;
+  display: block;
+  object-fit: contain;
+}
+
+.logo-text span {
+  color: var(--gold);
+}
+
+/* Small phones — shrink the logo a touch */
+@media (max-width: 600px) {
+  .logo-img { height: 34px; }
+  .logo-text { font-size: 1.15rem; }
+}
+
 body {
   margin: 0;
   font-family: var(--sans);
