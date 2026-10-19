@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Page Not Found | Everlight Memorials</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="css/style.css">
+  
+  <!-- Special styles for the 404 page -->
+  <style>
+    .error-page {
+      min-height: 70vh;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .error-code {
+      font-family: var(--script, Georgia);
+      font-size: clamp(6rem, 15vw, 10rem);
+      line-height: 0.8;
+      color: var(--gold);
+      margin-bottom: 20px;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body data-page="404">
+
+<!-- HEADER -->
+<header class="header">
+  <div class="container nav">
+    <a class="logo" href="index.html">
+      <img src="images/candle-2.jpeg" alt="Everlight Memorials" class="logo-img">
+      <span class="logo-text">Ever<span>light</span></span>
+    </a>
+    <button class="menu-button" aria-label="Menu">☰</button>
+    <ul class="menu">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="obituaries.html">Obituaries</a></li>
+      <li><a href="index.html#services">Services</a></li>
+      <li><a class="btn gold" href="submit.html">Post an obituary</a></li>
+    </ul>
+  </div>
+</header>
+
+<main>
+  <section class="error-page">
+    <div class="container">
+      <div class="error-code">404</div>
+      <h1 style="color: var(--ink); margin-bottom: 12px;">Page Not Found</h1>
+      <p class="lead" style="margin: 0 auto 32px; max-width: 50ch; color: var(--soft);">
+        We are sorry, but the page you are looking for has been moved, removed, or never existed. 
+        Please use the links below to find your way back.
+      </p>
+      
+      <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <a class="btn gold" href="index.html">Return Home</a>
+        <a class="btn outline" href="obituaries.html">View Obituaries</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <h3>🕯️ Everlight Memorials</h3>
+        <p>A place of comfort & remembrance.</p>
+      </div>
+      <div>
+        <h3>Explore</h3>
+        <ul>
+          <li><a href="obituaries.html">Obituaries</a></li>
+          <li><a href="submit.html">Post an obituary</a></li>
+          <li><a href="index.html#services">Services</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3>Connect</h3>
+        <ul>
+          <li><a href="https://facebook.com/" target="_blank">Facebook Page</a></li>
+          <li><a href="https://www.youtube.com/@ndandaeventsltd911" target="_blank">YouTube Channel</a></li>
+          <li>📞 0792 (Ndanda Events)</li>
+        </ul>
+      </div>
+    </div>
+    <div class="copy">
+      © <span id="year"></span> Everlight Memorials. All rights reserved.
+      <br><br>
+      <span class="powered-by">
+        POWERED BY: <a href="https://www.youtube.com/@ndandaeventsltd911" target="_blank" rel="noopener noreferrer">Ndanda Events TV</a>
+      </span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/app.js"></script>
+</body>
+</html>

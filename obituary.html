@@ -4,15 +4,21 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Obituary | Everlight Memorials</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
+  
+  <!-- SHARE LINK TAGS (Boss Notes) -->
+  <meta property="og:title" id="og-title" content="In Loving Memory | Everlight Memorials">
+  <meta property="og:description" id="og-desc" content="View the life story, funeral details, and leave a tribute.">
+  <meta property="og:image" id="og-image" content="https://yourdomain.com/images/share-thumbnail.jpg">
+  <meta property="og:type" content="article">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;1,500;1,600&display=swap" rel="stylesheet">
+  
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body data-page="obituary">
-
 
 <!-- HEADER -->
 <header class="header">
@@ -23,7 +29,7 @@
     </a>
     <button class="menu-button" aria-label="Menu">☰</button>
     <ul class="menu">
-      <li><a href="index.html" class="active">Home</a></li>
+      <li><a href="index.html">Home</a></li>
       <li><a href="obituaries.html">Obituaries</a></li>
       <li><a href="index.html#services">Services</a></li>
       <li><a class="btn gold" href="submit.html">Post an obituary</a></li>
@@ -34,30 +40,84 @@
 <!-- app.js fills this in using the ?id= in the web address -->
 <main id="obituary"></main>
 
-<!-- FOOTER -->
-<!-- FOOTER -->
+<!-- CONTRIBUTION MODAL (Boss Notes) -->
+<div id="contribute-modal" class="modal-overlay" hidden>
+  <div class="modal-content">
+    <button class="modal-close" id="close-modal">✕</button>
+    <h3 style="margin-bottom: 4px;">Contribute to the family</h3>
+    <p class="small" style="margin-bottom: 20px;">Enter your amount and choose a payment method.</p>
+    
+    <form id="contribute-form">
+      <div>
+        <label>Amount (KSh)</label>
+        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+          <button type="button" class="btn outline btn-amount" data-amt="500">500</button>
+          <button type="button" class="btn outline btn-amount" data-amt="1000">1,000</button>
+          <button type="button" class="btn outline btn-amount" data-amt="2000">2,000</button>
+        </div>
+        <input id="c-amount" type="number" min="1" required placeholder="Enter custom amount">
+      </div>
+      
+      <div>
+        <label>Your Name</label>
+        <input id="c-name" required maxlength="50" placeholder="e.g. John Doe">
+      </div>
+      
+      <div>
+        <label>Phone Number (for M-Pesa)</label>
+        <input id="c-phone" type="tel" required placeholder="07XX XXX XXX">
+      </div>
+      
+      <button class="btn gold" type="submit" style="margin-top: 10px; width: 100%;">Pay KSh <span id="pay-amt">0</span></button>
+    </form>
+  </div>
+</div>
+
 <footer class="footer">
   <div class="container">
-      <div class="footer-grid">
-        <div>
-    <h3>
-      🕯️ Everlight Memorials
+    <div class="footer-grid">
+      <div>
+        <h3>🕯️ Everlight Memorials</h3>
+        <p>A place of comfort & remembrance.</p>
+        <p style="margin-top: 12px;">
+          <a href="tel:0792000000" class="btn gold" style="padding: 8px 16px; font-size: .85rem;">📞 Call Ndanda Events</a>
+        </p>
+      </div>
+      <div>
+        <h3>Explore</h3>
+        <ul>
+          <li><a href="obituaries.html">Obituaries</a></li>
+          <li><a href="submit.html">Post an obituary</a></li>
+          <li><a href="index.html#services">Services</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3>Connect</h3>
+        <ul>
+          <li><a href="https://facebook.com/" target="_blank">Facebook Page</a></li>
+          <li><a href="https://www.youtube.com/@ndandaeventsltd911" target="_blank">YouTube Channel</a></li>
+          <li>📞 0792 487000(Ndanda Events)</li>
+        </ul>
+      </div>
+    </div>
+    <div class="copy">
+      © <span id="year"></span> Everlight Memorials. All rights reserved.
+      
+      <!-- Discreet Admin Link -->
+      <span style="margin-left: 10px; font-size: 0.75rem; opacity: 0.5;">
+        | <a href="admin.html" style="color: inherit; text-decoration: underline;">Staff Login</a>
+      </span>
+      
       <br><br>
-      <span class="powered-by">
+      
+      <!-- NEW CLICKABLE LOGO -->
+      <span class="powered-by" style="display: inline-flex; align-items: center; justify-content: center; gap: 10px; margin-top: 16px;">
         POWERED BY:
-        <a href="https://www.youtube.com/@ndandaeventsltd911"
-          target="_blank"
-          rel="noopener noreferrer">
-          Ndanda Events TV
+        <a href="https://www.ndandaevents.com/" target="_blank" rel="noopener noreferrer" style="display: inline-block;">
+          <img src="images/ndanda.jpg" alt="Ndanda Events" style="max-height: 45px; width: auto; vertical-align: middle; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
         </a>
       </span>
-    </h3>
-    <p>A peaceful place to honour loved ones and share tributes.</p>
-  </div>
-      <div><h3>Explore</h3><ul><li><a href="obituaries.html">Obituaries</a></li><li><a href="submit.html">Post an obituary</a></li><li><a href="index.html#services">Services</a></li></ul></div>
-      <div><h3>Contact</h3><ul><li>📞 +254 717602094</li><li>✉️ hello@everlight.example</li><li>📍 Nairobi, Kenya</li></ul></div>
     </div>
-    <div class="copy">© <span id="year"></span> Everlight Memorials. All rights reserved.</div>
   </div>
 </footer>
 

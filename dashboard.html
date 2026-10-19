@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Family Dashboard | Everlight Memorials</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="dashboard">
+
+<header class="header">
+  <div class="container nav">
+    <a class="logo" href="index.html">
+      <img src="images/candle-2.jpeg" alt="Everlight Memorials" class="logo-img">
+      <span class="logo-text">Ever<span>light</span></span>
+    </a>
+    <ul class="menu">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="obituaries.html">Obituaries</a></li>
+      <li><a href="index.html#services">Services</a></li>
+      <li><a class="btn gold" href="submit.html">Post an obituary</a></li>
+    </ul>
+  </div>
+</header>
+
+<main class="section">
+  <div class="container">
+    <!-- LOGIN GATE -->
+    <div id="login-gate" class="panel center" style="max-width: 400px; margin: 40px auto;">
+      <h2>Family Dashboard</h2>
+      <p class="small" style="margin-bottom: 20px;">Enter the unique Memorial ID and your Secret PIN to manage this page.</p>
+      
+      <input id="login-id" type="text" placeholder="Memorial ID (e.g. john-doe-12345)" style="margin-bottom: 12px;">
+      <input id="login-pin" type="password" placeholder="4-digit Secret PIN" maxlength="4" style="margin-bottom: 12px;">
+      
+      <button class="btn gold" id="login-btn" style="width: 100%;">Access Dashboard</button>
+      <p id="login-error" class="small" style="color: #b3261e; margin-top: 10px; display: none;">Invalid ID or PIN. Please check and try again.</p>
+    </div>
+
+    <!-- DASHBOARD CONTENT -->
+    <div id="dashboard-content" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 32px;">
+        <div>
+          <p class="eyebrow">Private Dashboard</p>
+          <h1 id="dash-name">Memorial Name</h1>
+        </div>
+        <div>
+          <a id="dash-view-link" class="btn outline" href="#" target="_blank">View Public Page</a>
+          <button id="logout-btn" class="btn" style="background: #b3261e; border-color: #b3261e;">Log Out</button>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <!-- TRIBUTES MODERATION -->
+        <div class="panel">
+          <h3>Tributes & Condolences</h3>
+          <p class="small">Review messages left by visitors.</p>
+          <div id="dash-tributes" style="margin-top: 20px;"></div>
+        </div>
+
+        <!-- FINANCIAL REPORT -->
+        <div class="panel" style="background: #faf7f1;">
+          <h3>Contribution Report</h3>
+          <p class="small">Download a record of all simulated contributions.</p>
+          
+          <div style="background: #fff; padding: 20px; border: 1px solid var(--line); margin: 20px 0;">
+            <p style="margin: 0; font-size: 0.9rem;">Total Raised:</p>
+            <h2 id="dash-raised" style="color: var(--gold); margin: 0;">KSh 0</h2>
+          </div>
+
+          <button class="btn gold" id="download-csv" style="width: 100%; margin-bottom: 16px;">⬇ Download CSV Report</button>
+        </div>
+      </div>
+
+      <!-- NEW: REQUEST AN EDIT SECTION -->
+      <div class="panel" style="margin-top: 32px;">
+        <h3>Request an Edit</h3>
+        <p class="small">To ensure the integrity of the memorial, you cannot edit details directly. Send a message to the Admin below, and they will apply the changes for you.</p>
+        
+        <form id="request-edit-form" style="margin-top: 16px;">
+          <div>
+            <label for="edit-message">What would you like to change? (e.g., "Please update the burial venue to Lang'ata")</label>
+            <textarea id="edit-message" required placeholder="Type your request here..."></textarea>
+          </div>
+          <button class="btn outline" type="submit">Send Request to Admin</button>
+        </form>
+      </div>
+      
+    </div>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <h3>🕯️ Everlight Memorials</h3>
+        <p>A place of comfort & remembrance.</p>
+        <p style="margin-top: 12px;">
+          <a href="tel:0792000000" class="btn gold" style="padding: 8px 16px; font-size: .85rem;">📞 Call Ndanda Events</a>
+        </p>
+      </div>
+      <div>
+        <h3>Explore</h3>
+        <ul>
+          <li><a href="obituaries.html">Obituaries</a></li>
+          <li><a href="submit.html">Post an obituary</a></li>
+          <li><a href="index.html#services">Services</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3>Connect</h3>
+        <ul>
+          <li><a href="https://facebook.com/" target="_blank">Facebook Page</a></li>
+          <li><a href="https://www.youtube.com/@ndandaeventsltd911" target="_blank">YouTube Channel</a></li>
+          <li>📞 0792 487000(Ndanda Events)</li>
+        </ul>
+      </div>
+    </div>
+    <div class="copy">
+      © <span id="year"></span> Everlight Memorials. All rights reserved.
+      
+      <!-- Discreet Admin Link -->
+      <span style="margin-left: 10px; font-size: 0.75rem; opacity: 0.5;">
+        | <a href="admin.html" style="color: inherit; text-decoration: underline;">Staff Login</a>
+      </span>
+      
+      <br><br>
+      
+      <!-- NEW CLICKABLE LOGO -->
+      <span class="powered-by" style="display: inline-flex; align-items: center; justify-content: center; gap: 10px; margin-top: 16px;">
+        POWERED BY:
+        <a href="https://www.ndandaevents.com/" target="_blank" rel="noopener noreferrer" style="display: inline-block;">
+          <img src="images/ndanda.jpg" alt="Ndanda Events" style="max-height: 45px; width: auto; vertical-align: middle; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+        </a>
+      </span>
+    </div>
+  </div>
+</footer>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

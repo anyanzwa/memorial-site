@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Everlight Memorials | Honouring loved ones across Kenya</title>
+  <meta name="description" content="Publish obituaries, share tributes and find comfort. A dignified online memorial space.">
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap" rel="stylesheet">
   
   <link rel="stylesheet" href="css/style.css">
-
 </head>
-
 <body data-page="home">
 
 <!-- HEADER -->
@@ -31,12 +31,24 @@
   </div>
 </header>
 
+<!-- NDANDA EVENTS TOP BANNER -->
+<div style="background: var(--gold); color: #fff; text-align: center; padding: 10px 20px; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;">
+  <span>An official service of</span>
+  <a href="https://www.ndandaevents.com/" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center;">
+    <img src="images/ndanda.jpg" alt="Ndanda Events" style="height: 28px; width: auto; background: #fff; padding: 2px 6px; border-radius: 4px;">
+  </a>
+  <a href="https://www.ndandaevents.com/" target="_blank" rel="noopener noreferrer" style="color: #fff; text-decoration: underline; margin-left: 5px;">
+    Visit NdandaEvents.com
+  </a>
+</div>
+
 <main>
-  <!-- HERO: slides use pictures from the images folder. If a picture is missing, the blue background shows. -->
+  <!-- HERO (3 Slides & 3 Dots) -->
   <section class="hero">
     <div class="slide show" style="background-image:url('images/casket-picture.jpg')"></div>
-    <div class="slide" style="background-image:url('images/media\ 2.jpg')"></div>
-    <div class="slide" style="background-image:url('images/escot-2.jpeg')"></div>
+    <div class="slide" style="background-image:url('images/setup-4.jpeg')"></div>
+    <div class="slide" style="background-image:url('images/escot-1.jpeg')"></div>
+    
     <div class="container">
       <p class="eyebrow">A place of comfort and remembrance</p>
       <h1>Every life deserves to be remembered.</h1>
@@ -46,14 +58,15 @@
         <a class="btn light" href="obituaries.html">Find an obituary</a>
       </div>
     </div>
+    
     <div class="dots">
       <button class="show" aria-label="Slide 1"></button>
       <button aria-label="Slide 2"></button>
-      <button aria-label="Slide 3"></button>
+      <button aria-label="Slide 3"></button> 
     </div>
   </section>
 
-  <!-- RECENT OBITUARIES (filled in by app.js) -->
+  <!-- RECENT OBITUARIES (1st Scroll) -->
   <section class="section">
     <div class="container">
       <div class="center">
@@ -71,79 +84,48 @@
     <div class="container">
       <div class="center"><p class="eyebrow">What we offer</p><h2>Compassionate services to honour every life</h2></div>
 
-      <!-- To use your own photo, replace the file in images/services/ (same name) or change the src below -->
       <div class="services-grid">
         <article class="service">
-          <div class="service-img">
-            <img src="images/candle-1.jpg" alt="" loading="lazy">
-            <span class="service-num">01</span>
-          </div>
-          <div class="service-body">
-            <h3>Online obituaries</h3>
-            <p>Announce a passing with photos, service details and a short life story, open to everyone, everywhere.</p>
-          </div>
+          <div class="service-img"><img src="images/candle-1.jpg" alt="" loading="lazy"><span class="service-num">01</span></div>
+          <div class="service-body"><h3>Online obituaries</h3><p>Announce a passing with photos, service details and a short life story, open to everyone, everywhere.</p></div>
         </article>
-
         <article class="service">
-          <div class="service-img">
-            <img src="images/media-3.jpeg" alt="" loading="lazy">
-            <span class="service-num">02</span>
-          </div>
-          <div class="service-body">
-            <h3>Digital tributes</h3>
-            <p>Friends and relatives share prayers and memories, and light candles on a living memorial page.</p>
-          </div>
+          <div class="service-img"><img src="images/media-3.jpeg" alt="" loading="lazy"><span class="service-num">02</span></div>
+          <div class="service-body"><h3>Digital tributes</h3><p>Friends and relatives share prayers and memories, and light candles on a living memorial page.</p></div>
         </article>
-
         <article class="service">
-          <div class="service-img">
-            <img src="images/comfort-inspiration.jpg" alt="" loading="lazy">
-            <span class="service-num">03</span>
-          </div>
-          <div class="service-body">
-            <h3>Comfort and inspiration</h3>
-            <p>Faith-inspired reflections and verses to strengthen those who mourn.</p>
-          </div>
+          <div class="service-img"><img src="images/comfort-inspiration.jpg" alt="" loading="lazy"><span class="service-num">03</span></div>
+          <div class="service-body"><h3>Comfort and inspiration</h3><p>Faith-inspired reflections and verses to strengthen those who mourn.</p></div>
         </article>
-
         <article class="service">
-          <div class="service-img">
-            <img src="images/remembrance.jpg" alt="" loading="lazy">
-            <span class="service-num">04</span>
-          </div>
-          <div class="service-body">
-            <h3>Family remembrance</h3>
-            <p>Bring relatives together to share photos, stories and heritage in one place.</p>
-          </div>
+          <div class="service-img"><img src="images/remembrance.jpg" alt="" loading="lazy"><span class="service-num">04</span></div>
+          <div class="service-body"><h3>Family remembrance</h3><p>Bring relatives together to share photos, stories and heritage in one place.</p></div>
         </article>
-
         <article class="service">
-          <div class="service-img">
-            <img src="images/celebrating a life.jpg" alt="" loading="lazy">
-            <span class="service-num">05</span>
-          </div>
-          <div class="service-body">
-            <h3>Celebrating a life</h3>
-            <p>Mark birthdays and anniversaries with gratitude and shared stories.</p>
-          </div>
+          <div class="service-img"><img src="images/celebrating a life.jpg" alt="" loading="lazy"><span class="service-num">05</span></div>
+          <div class="service-body"><h3>Celebrating a life</h3><p>Mark birthdays and anniversaries with gratitude and shared stories.</p></div>
         </article>
-
         <article class="service">
-          <div class="service-img">
-            <img src="images/hope.jpg" alt="" loading="lazy">
-            <span class="service-num">06</span>
-          </div>
-          <div class="service-body">
-            <h3>Hope and healing</h3>
-            <p>Gentle guidance and real stories of strength through the journey of grief.</p>
-          </div>
+          <div class="service-img"><img src="images/hope.jpg" alt="" loading="lazy"><span class="service-num">06</span></div>
+          <div class="service-body"><h3>Hope and healing</h3><p>Gentle guidance and real stories of strength through the journey of grief.</p></div>
         </article>
       </div>
     </div>
   </section>
 
-  <!-- TESTIMONIALS -->
+  <!-- 2ND OBITUARY SCROLL -->
   <section class="section">
+    <div class="container">
+      <div class="center">
+        <p class="eyebrow">More memories</p>
+        <h2>Honouring our loved ones</h2>
+      </div>
+      <div class="grid" id="recent-2"></div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section class="section white">
     <div class="container">
       <div class="center"><p class="eyebrow">Kind words</p><h2>What families say</h2></div>
       <div class="grid" style="margin-top:30px">
@@ -154,7 +136,8 @@
     </div>
   </section>
 
-  <section class="section white center">
+  <!-- CALL TO ACTION -->
+  <section class="section center">
     <div class="container">
       <h2>Ready to honour your loved one?</h2>
       <p>It takes only a few minutes to publish a lasting tribute.</p>
@@ -166,26 +149,49 @@
 <!-- FOOTER -->
 <footer class="footer">
   <div class="container">
-      <div class="footer-grid">
-        <div>
-    <h3>
-      🕯️ Everlight Memorials
+    <div class="footer-grid">
+      <div>
+        <h3>🕯️ Everlight Memorials</h3>
+        <p>A place of comfort & remembrance.</p>
+        <p style="margin-top: 12px;">
+          <a href="tel:0792000000" class="btn gold" style="padding: 8px 16px; font-size: .85rem;">📞 Call Ndanda Events</a>
+        </p>
+      </div>
+      <div>
+        <h3>Explore</h3>
+        <ul>
+          <li><a href="obituaries.html">Obituaries</a></li>
+          <li><a href="submit.html">Post an obituary</a></li>
+          <li><a href="index.html#services">Services</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3>Connect</h3>
+        <ul>
+          <li><a href="https://facebook.com/" target="_blank">Facebook Page</a></li>
+          <li><a href="https://www.youtube.com/@ndandaeventsltd911" target="_blank">YouTube Channel</a></li>
+          <li>📞 0792 487000(Ndanda Events)</li>
+        </ul>
+      </div>
+    </div>
+    <div class="copy">
+      © <span id="year"></span> Everlight Memorials. All rights reserved.
+      
+      <!-- Discreet Admin Link -->
+      <span style="margin-left: 10px; font-size: 0.75rem; opacity: 0.5;">
+        | <a href="admin.html" style="color: inherit; text-decoration: underline;">Staff Login</a>
+      </span>
+      
       <br><br>
-      <span class="powered-by">
+      
+      <!-- NEW CLICKABLE LOGO -->
+      <span class="powered-by" style="display: inline-flex; align-items: center; justify-content: center; gap: 10px; margin-top: 16px;">
         POWERED BY:
-        <a href="https://www.youtube.com/@ndandaeventsltd911"
-          target="_blank"
-          rel="noopener noreferrer">
-          Ndanda Events TV
+        <a href="https://www.ndandaevents.com/" target="_blank" rel="noopener noreferrer" style="display: inline-block;">
+          <img src="images/ndanda.jpg" alt="Ndanda Events" style="max-height: 45px; width: auto; vertical-align: middle; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
         </a>
       </span>
-    </h3>
-    <p>A peaceful place to honour loved ones and share tributes.</p>
-  </div>
-      <div><h3>Explore</h3><ul><li><a href="obituaries.html">Obituaries</a></li><li><a href="submit.html">Post an obituary</a></li><li><a href="index.html#services">Services</a></li></ul></div>
-      <div><h3>Contact</h3><ul><li>📞 +254 717602094</li><li>✉️ hello@everlight.example</li><li>📍 Nairobi, Kenya</li></ul></div>
     </div>
-    <div class="copy">© <span id="year"></span> Everlight Memorials. All rights reserved.</div>
   </div>
 </footer>
 

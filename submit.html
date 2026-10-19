@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap" rel="stylesheet">
+  
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body data-page="submit">
@@ -20,7 +21,7 @@
     </a>
     <button class="menu-button" aria-label="Menu">☰</button>
     <ul class="menu">
-      <li><a href="index.html" class="active">Home</a></li>
+      <li><a href="index.html">Home</a></li>
       <li><a href="obituaries.html">Obituaries</a></li>
       <li><a href="index.html#services">Services</a></li>
       <li><a class="btn gold" href="submit.html">Post an obituary</a></li>
@@ -31,152 +32,189 @@
 <main>
   <section class="section">
     <div class="container">
-      <p class="eyebrow">Post an obituary</p>
-      <h1>Honour your loved one</h1>
-      <p>Fill in the details. The preview on the right updates as you type. Fields marked * are required.</p>
-      <div id="notice" class="notice" role="status"></div>
+      
+      <!-- THE FORM -->
+      <div id="form-section">
+        <p class="eyebrow">Post an obituary</p>
+        <h1>Honour your loved one</h1>
+        <p>Fill in the details. The preview on the right updates as you type. Fields marked * are required.</p>
+        <div id="notice" class="notice" role="status"></div>
 
-      <div class="two-col" style="margin-top:24px">
-        <div class="panel">
-          <form id="submit-form" novalidate>
+        <div class="two-col" style="margin-top:24px">
+          <div class="panel">
+            <form id="submit-form" novalidate>
 
-            <div><label for="name">Full name of the departed *</label>
-              <input id="name" maxlength="80" required><div class="error"></div></div>
+              <div><label for="name">Full name of the departed *</label>
+                <input id="name" maxlength="80" required><div class="error"></div></div>
 
-            <div class="row">
-              <div><label for="born">Date of birth *</label><input id="born" type="date" required><div class="error"></div></div>
-              <div><label for="died">Date of passing *</label><input id="died" type="date" required><div class="error"></div></div>
-            </div>
+              <div class="row">
+                <div><label for="born">Date of birth *</label><input id="born" type="date" required><div class="error"></div></div>
+                <div><label for="died">Date of passing *</label><input id="died" type="date" required><div class="error"></div></div>
+              </div>
 
-            <div><label for="county">Home county *</label>
-              <select id="county" required>
-                <option value="">Select county</option>
-                  <option>Baringo</option>
-                  <option>Bomet</option>
-                  <option>Bungoma</option>
-                  <option>Busia</option>
-                  <option>Elgeyo Marakwet</option>
-                  <option>Embu</option>
-                  <option>Garissa</option>
-                  <option>Homa Bay</option>
-                  <option>Isiolo</option>
-                  <option>Kajiado</option>
-                  <option>Kakamega</option>
-                  <option>Kericho</option>
-                  <option>Kiambu</option>
-                  <option>Kilifi</option>
-                  <option>Kirinyaga</option>
-                  <option>Kisii</option>
-                  <option>Kisumu</option>
-                  <option>Kitui</option>
-                  <option>Kwale</option>
-                  <option>Laikipia</option>
-                  <option>Lamu</option>
-                  <option>Machakos</option>
-                  <option>Makueni</option>
-                  <option>Mandera</option>
-                  <option>Marsabit</option>
-                  <option>Meru</option>
-                  <option>Migori</option>
-                  <option>Mombasa</option>
-                  <option>Murang'a</option>
-                  <option>Nairobi</option>
-                  <option>Nakuru</option>
-                  <option>Nandi</option>
-                  <option>Narok</option>
-                  <option>Nyamira</option>
-                  <option>Nyandarua</option>
-                  <option>Nyeri</option>
-                  <option>Samburu</option>
-                  <option>Siaya</option>
-                  <option>Taita Taveta</option>
-                  <option>Tana River</option>
-                  <option>Tharaka Nithi</option>
-                  <option>Trans Nzoia</option>
-                  <option>Turkana</option>
-                  <option>Uasin Gishu</option>
-                  <option>Vihiga</option>
-                  <option>Wajir</option>
-                  <option>West Pokot</option>
-              </select><div class="error"></div></div>
+              <div><label for="county">Home county *</label>
+                <select id="county" required>
+                  <option value="">Select county</option>
+                  <option>Baringo</option><option>Bomet</option><option>Bungoma</option>
+                  <option>Busia</option><option>Elgeyo Marakwet</option><option>Embu</option>
+                  <option>Garissa</option><option>Homa Bay</option><option>Isiolo</option>
+                  <option>Kajiado</option><option>Kakamega</option><option>Kericho</option>
+                  <option>Kiambu</option><option>Kilifi</option><option>Kirinyaga</option>
+                  <option>Kisii</option><option>Kisumu</option><option>Kitui</option>
+                  <option>Kwale</option><option>Laikipia</option><option>Lamu</option>
+                  <option>Machakos</option><option>Makueni</option><option>Mandera</option>
+                  <option>Marsabit</option><option>Meru</option><option>Migori</option>
+                  <option>Mombasa</option><option>Murang'a</option><option>Nairobi</option>
+                  <option>Nakuru</option><option>Nandi</option><option>Narok</option>
+                  <option>Nyamira</option><option>Nyandarua</option><option>Nyeri</option>
+                  <option>Samburu</option><option>Siaya</option><option>Taita Taveta</option>
+                  <option>Tana River</option><option>Tharaka Nithi</option><option>Trans Nzoia</option>
+                  <option>Turkana</option><option>Uasin Gishu</option><option>Vihiga</option>
+                  <option>Wajir</option><option>West Pokot</option>
+                </select><div class="error"></div></div>
 
-            <div><label for="photo">Photo of the departed (JPG or PNG, optional, max 5 MB)</label>
-              <input id="photo" type="file" accept="image/*"><div class="error"></div></div>
+              <div><label for="photo">Photo of the departed (JPG or PNG, optional, max 5 MB)</label>
+                <input id="photo" type="file" accept="image/*"><div class="error"></div></div>
 
-            <div><label for="story">Life story *</label>
-              <textarea id="story" maxlength="1500" required placeholder="Share their life, faith, family and legacy"></textarea><div class="error"></div></div>
+              <div><label for="story">Life story *</label>
+                <textarea id="story" maxlength="1500" required placeholder="Share their life, faith, family and legacy"></textarea><div class="error"></div></div>
 
-            <div><label for="service">Memorial service details</label><input id="service" placeholder="Date, time and venue"><div class="error"></div></div>
-            <div><label for="burial">Burial details</label><input id="burial" placeholder="Date, time and place"><div class="error"></div></div>
+              <div><label for="service">Memorial service details</label><input id="service" placeholder="Date, time and venue"><div class="error"></div></div>
+              <div><label for="burial">Burial details</label><input id="burial" placeholder="Date, time and place"><div class="error"></div></div>
 
-            <div><label for="program">Funeral program (PDF, optional, max 5 MB)</label>
-              <p class="small" style="margin:0 0 6px">It will be shown on the memorial page so visitors can scroll through it, and they can also download it.</p>
-              <input id="program" type="file" accept="application/pdf"><div class="error"></div></div>
+              <div><label for="livestream">Livestream Link (YouTube, optional)</label>
+                <input id="livestream" type="url" placeholder="e.g. https://youtube.com/live/..."><div class="error"></div></div>
 
-            <h3 style="margin-top:14px">Contribution to family <span class="small">(optional)</span></h3>
-            <p class="small">Fill this in only if the family welcomes contributions. Leave blank to hide it.</p>
-            <div class="row">
-              <div><label for="mpesa-number">M-Pesa number</label><input id="mpesa-number" type="tel" placeholder="+254 7XX XXX XXX"><div class="error"></div></div>
-              <div><label for="mpesa-name">M-Pesa registered name</label><input id="mpesa-name" maxlength="60"><div class="error"></div></div>
-            </div>
-            <div class="row">
-              <div><label for="bank-name">Bank</label><input id="bank-name" maxlength="60" placeholder="e.g. KCB Bank"><div class="error"></div></div>
-              <div><label for="bank-account">Account number</label><input id="bank-account" maxlength="40"><div class="error"></div></div>
-            </div>
-            <div><label for="bank-holder">Account holder name</label><input id="bank-holder" maxlength="80"><div class="error"></div></div>
-            <div><label for="contribution-contact">Family contact for contributions</label><input id="contribution-contact" maxlength="100" placeholder="e.g. 0712 345 678 (Peter)"><div class="error"></div></div>
+              <div><label for="program">Funeral program (PDF, optional, max 5 MB)</label>
+                <input id="program" type="file" accept="application/pdf"><div class="error"></div></div>
 
-            <h3 style="margin-top:14px">Your contact details</h3>
-            <div><label for="contact">Your name *</label><input id="contact" required><div class="error"></div></div>
-            <div class="row">
-              <div><label for="email">Email *</label><input id="email" type="email" required><div class="error"></div></div>
-              <div><label for="phone">Phone</label><input id="phone" type="tel" placeholder="+254..."><div class="error"></div></div>
-            </div>
+              <h3 style="margin-top:14px">Contribution to family <span class="small">(optional)</span></h3>
+              <p class="small">Fill this in only if the family welcomes contributions.</p>
+              
+              <div class="row">
+                <div><label for="fund-target">Fundraising Target (KSh)</label><input id="fund-target" type="number" placeholder="e.g. 500000"><div class="error"></div></div>
+                <div><label for="fund-reason">What the funds support</label><input id="fund-reason" maxlength="100" placeholder="e.g. Hospital bills"><div class="error"></div></div>
+              </div>
 
-            <button class="btn gold" type="submit">Publish obituary for Approval</button>
-          </form>
-        </div>
+              <div class="row">
+                <div><label for="mpesa-number">M-Pesa number</label><input id="mpesa-number" type="tel" placeholder="+254 7XX XXX XXX"><div class="error"></div></div>
+                <div><label for="mpesa-name">M-Pesa registered name</label><input id="mpesa-name" maxlength="60"><div class="error"></div></div>
+              </div>
+              <div class="row">
+                <div><label for="bank-name">Bank</label><input id="bank-name" maxlength="60"><div class="error"></div></div>
+                <div><label for="bank-account">Account number</label><input id="bank-account" maxlength="40"><div class="error"></div></div>
+              </div>
+              <div><label for="bank-holder">Account holder name</label><input id="bank-holder" maxlength="80"><div class="error"></div></div>
+              <div><label for="contribution-contact">Family contact for contributions</label><input id="contribution-contact" maxlength="100"><div class="error"></div></div>
 
-        <!-- LIVE PREVIEW -->
-        <aside class="sticky">
-          <div class="card">
-            <div class="photo"><img id="pv-img" alt="" hidden><span id="pv-init">—</span></div>
-            <div class="card-body">
-              <h3 id="pv-name">Full name</h3>
-              <p class="small" id="pv-dates"></p>
-              <p class="small summary" id="pv-story"></p>
-              <span class="meta" id="pv-county"></span>
-            </div>
+              <h3 style="margin-top:14px">Your contact details</h3>
+              <div><label for="contact">Your name *</label><input id="contact" required><div class="error"></div></div>
+              <div class="row">
+                <div><label for="email">Email *</label><input id="email" type="email" required><div class="error"></div></div>
+                <div><label for="phone">Phone</label><input id="phone" type="tel" placeholder="+254..."><div class="error"></div></div>
+              </div>
+
+              <button class="btn gold" type="submit" style="font-size: 1.1rem; padding: 15px;">Proceed to Payment (KSh 3,000)</button>
+            </form>
           </div>
-        </aside>
+
+          <!-- LIVE PREVIEW -->
+          <aside class="sticky">
+            <div class="card">
+              <div class="photo"><img id="pv-img" alt="" hidden><span id="pv-init">—</span></div>
+              <div class="card-body">
+                <h3 id="pv-name">Full name</h3>
+                <p class="small" id="pv-dates"></p>
+                <p class="small summary" id="pv-story"></p>
+                <span class="meta" id="pv-county"></span>
+              </div>
+            </div>
+          </aside>
+        </div>
       </div>
+
+      <!-- SUCCESS SCREEN -->
+      <div id="success-section" style="display: none; max-width: 600px; margin: 40px auto; text-align: center; background: #fff; padding: 40px 20px; border: 1px solid var(--line); box-shadow: var(--shadow);">
+        <h2 style="color: var(--gold); margin-bottom: 16px; font-size: 2rem;">✓ Payment Confirmed</h2>
+        <p>The memorial page is now live and ready to be shared.</p>
+        
+        <div style="background: #faf7f1; padding: 24px; border: 1px dashed var(--gold); margin: 28px 0;">
+          <p style="margin: 0; font-size: 0.9rem; color: var(--soft);">Your Secret PIN for this page is:</p>
+          <h1 id="success-pin" style="font-size: 3rem; letter-spacing: 8px; color: #b3261e; margin: 10px 0; font-family: monospace;"></h1>
+          <p class="small" style="margin: 0; color: #b3261e; font-weight: bold;">⚠️ Please write this down. You will need it to manage this page.</p>
+        </div>
+        
+        <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+          <a id="success-view-btn" class="btn outline" href="#">View Public Page</a>
+          <a id="success-manage-btn" class="btn gold" href="#">Go to Family Dashboard</a>
+        </div>
+      </div>
+
     </div>
   </section>
 </main>
 
-<!-- FOOTER -->
+<!-- PAYMENT MODAL -->
+<div id="publish-modal" class="modal-overlay" hidden>
+  <div class="modal-content" style="text-align: center;">
+    <button class="modal-close" id="close-publish-modal">✕</button>
+    <h3 style="margin-bottom: 8px;">Approve Obituary</h3>
+    <p class="small" style="margin-bottom: 24px;">To publish this memorial page and generate your secure dashboard PIN, please complete the payment.</p>
+    
+    <div style="background: #faf7f1; padding: 16px; border: 1px solid var(--line); margin-bottom: 20px; border-radius: 8px;">
+      <p style="margin: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--soft);">Publication Fee</p>
+      <h2 style="margin: 4px 0 0; color: var(--gold); font-size: 2rem;">KSh 3,000</h2>
+    </div>
+
+    <button class="btn gold" id="pay-publish-btn" style="width: 100%; padding: 15px; font-size: 1.1rem;">Pay via M-Pesa</button>
+  </div>
+</div>
+
 <footer class="footer">
   <div class="container">
-      <div class="footer-grid">
-        <div>
-    <h3>
-      🕯️ Everlight Memorials
+    <div class="footer-grid">
+      <div>
+        <h3>🕯️ Everlight Memorials</h3>
+        <p>A place of comfort & remembrance.</p>
+        <p style="margin-top: 12px;">
+          <a href="tel:0792000000" class="btn gold" style="padding: 8px 16px; font-size: .85rem;">📞 Call Ndanda Events</a>
+        </p>
+      </div>
+      <div>
+        <h3>Explore</h3>
+        <ul>
+          <li><a href="obituaries.html">Obituaries</a></li>
+          <li><a href="submit.html">Post an obituary</a></li>
+          <li><a href="index.html#services">Services</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3>Connect</h3>
+        <ul>
+          <li><a href="https://facebook.com/" target="_blank">Facebook Page</a></li>
+          <li><a href="https://www.youtube.com/@ndandaeventsltd911" target="_blank">YouTube Channel</a></li>
+          <li>📞 0792 487000(Ndanda Events)</li>
+        </ul>
+      </div>
+    </div>
+    <div class="copy">
+      © <span id="year"></span> Everlight Memorials. All rights reserved.
+      
+      <!-- Discreet Admin Link -->
+      <span style="margin-left: 10px; font-size: 0.75rem; opacity: 0.5;">
+        | <a href="admin.html" style="color: inherit; text-decoration: underline;">Staff Login</a>
+      </span>
+      
       <br><br>
-      <span class="powered-by">
+      
+      <!-- NEW CLICKABLE LOGO -->
+      <span class="powered-by" style="display: inline-flex; align-items: center; justify-content: center; gap: 10px; margin-top: 16px;">
         POWERED BY:
-        <a href="https://www.youtube.com/@ndandaeventsltd911"
-          target="_blank"
-          rel="noopener noreferrer">
-          Ndanda Events TV
+        <a href="https://www.ndandaevents.com/" target="_blank" rel="noopener noreferrer" style="display: inline-block;">
+          <img src="images/ndanda.jpg" alt="Ndanda Events" style="max-height: 45px; width: auto; vertical-align: middle; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
         </a>
       </span>
-    </h3>
-    <p>A peaceful place to honour loved ones and share tributes.</p>
-  </div>
-      <div><h3>Explore</h3><ul><li><a href="obituaries.html">Obituaries</a></li><li><a href="submit.html">Post an obituary</a></li><li><a href="index.html#services">Services</a></li></ul></div>
-      <div><h3>Contact</h3><ul><li>📞 +254 717602094</li><li>✉️ hello@everlight.example</li><li>📍 Nairobi, Kenya</li></ul></div>
     </div>
-    <div class="copy">© <span id="year"></span> Everlight Memorials. All rights reserved.</div>
   </div>
 </footer>
 
