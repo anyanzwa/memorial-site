@@ -1,6 +1,5 @@
 /* =====================================================================
-   Everlight Memorials: app.js
-   One file, split into small sections. Each page calls only what it needs.
+   Tribute Hub Memorials: app.js
    ===================================================================== */
 
 /* ---------- 1. SMALL HELPERS ---------- */
@@ -32,7 +31,7 @@ function allObituaries() {
 /* ---------- 1b. BIG FILES (IndexedDB) ---------- */
 function openFiles() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open("everlight", 1);
+    const request = indexedDB.open("Tribute Hub", 1);
     request.onupgradeneeded = () => request.result.createObjectStore("files");
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
@@ -220,8 +219,9 @@ function checkFields(fields) {
   return ok;
 }
 
-/* ---------- 7. SUBMIT PAGE (With Payment Gate) ---------- */
+/* ---------- 7. SUBMIT PAGE (With Preview & Payment Gate) ---------- */
 let pendingObituary = null;
+let pendingProgramFile = null;
 
 function setupSubmit() {
   const form = $("#submit-form");
@@ -275,6 +275,36 @@ function setupSubmit() {
     });
   }
 
+  function readGallery() {
+    return new Promise((resolve, reject) => {
+      const files = get("gallery").files;
+      if (!files || files.length === 0) return resolve([]);
+      if (files.length > 5) return reject("You can only upload a maximum of 5 gallery photos.");
+      
+      const promises = Array.from(files).map(file => {
+        return new Promise((res, rej) => {
+          if (!file.type.startsWith("image/")) return rej("Please choose only image files.");
+          if (file.size > 5 * 1024 * 1024) return rej("Each photo must be smaller than 5 MB.");
+          const reader = new FileReader();
+          reader.onload = () => {
+            const image = new Image();
+            image.onload = () => {
+              const scale = Math.min(1, 800 / Math.max(image.width, image.height));
+              const canvas = document.createElement("canvas");
+              canvas.width = Math.round(image.width * scale);
+              canvas.height = Math.round(image.height * scale);
+              canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+              res(canvas.toDataURL("image/jpeg", 0.8));
+            };
+            image.src = reader.result;
+          };
+          reader.readAsDataURL(file);
+        });
+      });
+      Promise.all(promises).then(resolve).catch(reject);
+    });
+  }
+
   function readPdf() {
     return new Promise((resolve, reject) => {
       const file = get("program").files[0];
@@ -296,6 +326,10 @@ function setupSubmit() {
     try { photo = await readPhoto(); get("photo").parentElement.querySelector(".error").textContent = ""; }
     catch (message) { get("photo").parentElement.querySelector(".error").textContent = message; return; }
 
+    let gallery = [];
+    try { gallery = await readGallery(); get("gallery").parentElement.querySelector(".error").textContent = ""; }
+    catch (message) { get("gallery").parentElement.querySelector(".error").textContent = message; return; }
+
     let program = "";
     try { program = await readPdf(); }
     catch (message) { get("program").parentElement.querySelector(".error").textContent = message; return; }
@@ -310,6 +344,7 @@ function setupSubmit() {
       name: get("name").value.trim(), born: born, died: died, age: Number(died.slice(0, 4)) - Number(born),
       county: get("county").value, summary: story.slice(0, 110) + (story.length > 110 ? "…" : ""), story: story,
       service: get("service").value.trim(), burial: get("burial").value.trim(), photo: photo, program: program ? "idb" : "",
+      gallery: gallery, // <--- SAVE GALLERY
       livestream: get("livestream")?.value.trim() || "",
       mpesaNumber: get("mpesa-number")?.value.trim() || "", mpesaName: get("mpesa-name")?.value.trim() || "",
       bankName: get("bank-name")?.value.trim() || "", bankAccount: get("bank-account")?.value.trim() || "",
@@ -317,9 +352,68 @@ function setupSubmit() {
       fundTarget: get("fund-target")?.value ? Number(get("fund-target").value) : 0,
       fundReason: get("fund-reason")?.value.trim() || "",
       securePin: securePin,
-      programFile: program 
+      contact: get("contact").value.trim(),
+      email: get("email").value.trim(),
+      phone: get("phone")?.value.trim() || ""
     };
 
+    pendingProgramFile = program;
+
+    // POPULATE PREVIEW
+    $("#prev-name").textContent = pendingObituary.name;
+    $("#prev-born").textContent = pendingObituary.born;
+    $("#prev-died").textContent = pendingObituary.died.slice(0, 4);
+    $("#prev-summary").textContent = pendingObituary.summary;
+    $("#prev-county").textContent = pendingObituary.county;
+    
+    const storyHTML = pendingObituary.story.split(/\n+/).filter(Boolean).map((text) => `<p>${safe(text)}</p>`).join("");
+    $("#prev-story").innerHTML = storyHTML;
+
+    if (pendingObituary.photo) {
+      $("#prev-portrait").innerHTML = `<img src="${safe(pendingObituary.photo)}" alt="Photo">`;
+      $("#prev-bg").style.backgroundImage = `url("${pendingObituary.photo}")`;
+    } else {
+      $("#prev-portrait").textContent = initials(pendingObituary.name);
+      $("#prev-bg").style.backgroundImage = 'none';
+    }
+
+    // POPULATE PREVIEW GALLERY
+    if (gallery.length > 0) {
+      $("#prev-gallery-section").style.display = "block";
+      $("#prev-gallery").innerHTML = gallery.map(img => `<img src="${img}" alt="Gallery Photo">`).join("");
+    } else {
+      $("#prev-gallery-section").style.display = "none";
+    }
+
+    let funeralHTML = "";
+    if (pendingObituary.service || pendingObituary.burial) {
+      funeralHTML += `<h2 class="ornate">Funeral details</h2><div class="details">`;
+      if (pendingObituary.service) funeralHTML += `<div class="detail"><b>Memorial service</b><p>${safe(pendingObituary.service)}</p></div>`;
+      if (pendingObituary.burial) funeralHTML += `<div class="detail"><b>Burial</b><p>${safe(pendingObituary.burial)}</p></div>`;
+      funeralHTML += `</div>`;
+    }
+    $("#prev-funeral-details").innerHTML = funeralHTML;
+
+    if (pendingObituary.fundTarget > 0) {
+      $("#prev-contribution-box").style.display = "block";
+      $("#prev-fund-reason").textContent = pendingObituary.fundReason || "Help the family with funeral expenses.";
+      $("#prev-fund-target").textContent = Number(pendingObituary.fundTarget).toLocaleString();
+    } else {
+      $("#prev-contribution-box").style.display = "none";
+    }
+
+    document.getElementById("form-section").style.display = "none";
+    document.getElementById("preview-section").style.display = "block";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  document.getElementById("back-to-edit").addEventListener("click", () => {
+    document.getElementById("preview-section").style.display = "none";
+    document.getElementById("form-section").style.display = "block";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  document.getElementById("proceed-to-payment").addEventListener("click", () => {
     $("#publish-modal").hidden = false;
     document.body.style.overflow = 'hidden';
   });
@@ -336,12 +430,11 @@ document.addEventListener("DOMContentLoaded", () => {
       payBtn.disabled = true;
 
       setTimeout(async () => {
-        if (pendingObituary.programFile) {
-          try { await saveFile("program_" + pendingObituary.id, pendingObituary.programFile); }
+        if (pendingProgramFile) {
+          try { await saveFile("program_" + pendingObituary.id, pendingProgramFile); }
           catch (e) { alert("Could not save PDF."); payBtn.textContent = 'Pay via M-Pesa'; payBtn.disabled = false; return; }
         }
-        delete pendingObituary.programFile;
-
+        
         const saved = load("saved_obituaries", []);
         saved.unshift(pendingObituary);
         save("saved_obituaries", saved);
@@ -352,12 +445,34 @@ document.addEventListener("DOMContentLoaded", () => {
           save("my_memorials", myMemorials);
         }
 
+        const reviewHTML = `
+          <div style="background: #fff; padding: 12px; border: 1px solid var(--line); border-radius: 6px;">
+            <strong style="color: var(--gold); display: block; font-size: 0.8rem; text-transform: uppercase;">Deceased Details</strong>
+            <span style="font-size: 1.1rem; font-weight: 700;">${safe(pendingObituary.name)}</span><br>
+            <span class="small">${pendingObituary.born} – ${pendingObituary.died} | ${safe(pendingObituary.county)} County</span>
+          </div>
+          <div style="background: #fff; padding: 12px; border: 1px solid var(--line); border-radius: 6px;">
+            <strong style="color: var(--gold); display: block; font-size: 0.8rem; text-transform: uppercase;">Added Features</strong>
+            <span class="small">
+              ${pendingObituary.fundTarget > 0 ? '✅ Fundraising Target<br>' : '❌ No Fundraising<br>'}
+              ${pendingObituary.livestream ? '✅ Livestream Link<br>' : '❌ No Livestream<br>'}
+              ${pendingObituary.program ? '✅ Program PDF<br>' : '❌ No Program PDF<br>'}
+              ${pendingObituary.gallery && pendingObituary.gallery.length > 0 ? '✅ Gallery (' + pendingObituary.gallery.length + ' photos)' : '❌ No Gallery Photos'}
+            </span>
+          </div>
+          <div style="background: #fff; padding: 12px; border: 1px solid var(--line); border-radius: 6px; grid-column: 1 / -1;">
+            <strong style="color: var(--gold); display: block; font-size: 0.8rem; text-transform: uppercase;">Contact Person</strong>
+            <span class="small">${safe(pendingObituary.contact)} · ${safe(pendingObituary.phone || 'No phone')} · ${safe(pendingObituary.email)}</span>
+          </div>
+        `;
+        document.getElementById("success-review").innerHTML = reviewHTML;
+
         $("#publish-modal").hidden = true;
         document.body.style.overflow = '';
         payBtn.textContent = 'Pay via M-Pesa';
         payBtn.disabled = false;
 
-        document.getElementById("form-section").style.display = "none";
+        document.getElementById("preview-section").style.display = "none";
         document.getElementById("success-section").style.display = "block";
         document.getElementById("success-pin").textContent = pendingObituary.securePin;
         document.getElementById("success-view-btn").href = `obituary.html?id=${encodeURIComponent(pendingObituary.id)}`;
@@ -365,6 +480,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         window.scrollTo({ top: 0, behavior: "smooth" });
         pendingObituary = null;
+        pendingProgramFile = null;
       }, 2500);
     });
   }
@@ -441,7 +557,7 @@ function setupObituary() {
     page.innerHTML = '<div class="container section center"><h1>Obituary not found</h1><p><a href="obituaries.html">← Back to all obituaries</a></p></div>';
     return;
   }
-  document.title = o.name + " | Everlight Memorials";
+  document.title = o.name + " | Tribute Hub";
   
   if ($('#og-title')) $('#og-title').setAttribute('content', `In Loving Memory of ${o.name}`);
   if ($('#og-desc')) $('#og-desc').setAttribute('content', `View the life story of ${o.name} and leave a tribute.`);
@@ -461,6 +577,14 @@ function setupObituary() {
   const diedLong = new Date(o.died).toLocaleDateString("en-KE", { day: "numeric", month: "long", year: "numeric" });
   const others = all.filter((item) => item.id !== o.id).slice(0, 3);
   const portrait = o.photo ? `<img src="${safe(o.photo)}" alt="Photo of ${safe(o.name)}">` : initials(o.name);
+
+  // GALLERY HTML
+  const galleryHTML = (o.gallery && o.gallery.length > 0) ? `
+      <h2 class="ornate">Photo Gallery</h2>
+      <div class="gallery-grid">
+        ${o.gallery.map(img => `<a href="${img}" target="_blank"><img src="${img}" alt="Gallery Photo"></a>`).join("")}
+      </div>
+    ` : "";
 
   const livestreamSection = o.livestream ? `
       <h2 class="ornate">Watch the Funeral</h2>
@@ -536,6 +660,9 @@ function setupObituary() {
         <article class="post">
           <h2 class="ornate" style="margin-top:0">Life story</h2>
           <div class="post-text">${paragraphs}</div>
+          
+          ${galleryHTML}
+
           <div id="livestream-section">${livestreamSection}</div>
           ${details}
           ${program}
@@ -791,7 +918,7 @@ function generatePoster(o) {
 
     ctx.fillStyle = "#8892a6";
     ctx.font = "600 22px Arial, sans-serif";
-    ctx.fillText("everlight-memorials.com", canvas.width / 2, canvas.height - 100);
+    ctx.fillText("TributeHub.com", canvas.width / 2, canvas.height - 100);
     
     const link = document.createElement("a");
     link.download = `${o.name.replace(/\s+/g, '-')}-Announcement.png`;
@@ -978,7 +1105,7 @@ function setupAdmin() {
   const errorMsg = $("#login-error");
   const logoutBtn = $("#logout-btn");
 
-  const ADMIN_PASSWORD = "everlight2024"; 
+  const ADMIN_PASSWORD = "Tribute Hub2024"; 
 
   function checkAuth() {
     if (localStorage.getItem("admin_auth") === "true") {
@@ -1010,7 +1137,6 @@ function setupAdmin() {
     let totalRaised = 0;
     let totalTributes = 0;
 
-    // CHECK FOR REQUESTS & SHOW ALERT
     const requests = load("edit_requests", []);
     const alertBanner = $("#admin-alert");
     
@@ -1021,7 +1147,6 @@ function setupAdmin() {
       alertBanner.style.display = "none"; 
     }
 
-    // LOAD MAIN OBITUARY TABLE
     const tbody = $("#admin-table tbody");
     tbody.innerHTML = "";
 
@@ -1049,7 +1174,6 @@ function setupAdmin() {
     $("#stat-tributes").textContent = totalTributes;
     $("#stat-raised").textContent = "KSh " + totalRaised.toLocaleString();
 
-    // LOAD EDIT REQUESTS TABLE
     const reqTbody = $("#requests-table tbody");
     reqTbody.innerHTML = "";
 
@@ -1149,14 +1273,13 @@ function setupAdmin() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `Everlight-Master-Report.csv`;
+    a.download = `Tribute-Hub-Master-Report.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
   });
 
   checkAuth();
 
-  // Auto-refresh every 5 seconds to catch new requests live
   setInterval(() => {
     if (localStorage.getItem("admin_auth") === "true") {
       loadAdminData();

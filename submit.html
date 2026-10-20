@@ -3,21 +3,30 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Post an Obituary | Everlight Memorials</title>
+  <title>Post an Obituary | Tribute Hub</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap" rel="stylesheet">
-  
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body data-page="submit">
 
 <!-- HEADER -->
 <header class="header">
+  <!-- NDANDA EVENTS TOP BANNER -->
+  <div style="background: var(--gold); color: #fff; text-align: center; padding: 10px 20px; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;">
+    <span>An official service of</span>
+    <a href="https://www.ndandaevents.com/" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center;">
+      <img src="images/ndanda.jpg" alt="Ndanda Events" style="height: 28px; width: auto; background: #fff; padding: 2px 6px; border-radius: 4px;">
+    </a>
+    <a href="https://www.ndandaevents.com/" target="_blank" rel="noopener noreferrer" style="color: #fff; text-decoration: underline; margin-left: 5px;">
+      Visit NdandaEvents.com
+    </a>
+  </div>
   <div class="container nav">
     <a class="logo" href="index.html">
-      <img src="images/candle-2.jpeg" alt="Everlight Memorials" class="logo-img">
-      <span class="logo-text">Ever<span>light</span></span>
+      <img src="images/candle-2.jpeg" alt="Tribute Hub" class="logo-img">
+      <span class="logo-text">Tribute<span>Hub</span></span>
     </a>
     <button class="menu-button" aria-label="Menu">☰</button>
     <ul class="menu">
@@ -48,8 +57,8 @@
                 <input id="name" maxlength="80" required><div class="error"></div></div>
 
               <div class="row">
-                <div><label for="born">Date of birth *</label><input id="born" type="date" required><div class="error"></div></div>
-                <div><label for="died">Date of passing *</label><input id="died" type="date" required><div class="error"></div></div>
+                <div><label for="born">SUNRISE *</label><input id="born" type="date" required><div class="error"></div></div>
+                <div><label for="died">SUNSET *</label><input id="died" type="date" required><div class="error"></div></div>
               </div>
 
               <div><label for="county">Home county *</label>
@@ -73,14 +82,19 @@
                   <option>Wajir</option><option>West Pokot</option>
                 </select><div class="error"></div></div>
 
-              <div><label for="photo">Photo of the departed (JPG or PNG, optional, max 5 MB)</label>
+              <div><label for="photo">Main Photo of the departed (JPG or PNG, optional, max 5 MB)</label>
                 <input id="photo" type="file" accept="image/*"><div class="error"></div></div>
+
+              <!-- NEW: GALLERY INPUT -->
+              <div><label for="gallery">Photo Gallery (Multiple images, optional, max 5 photos)</label>
+                <p class="small" style="margin:0 0 6px">Upload additional photos to create a beautiful gallery on the memorial page.</p>
+                <input id="gallery" type="file" accept="image/*" multiple><div class="error"></div></div>
 
               <div><label for="story">Life story *</label>
                 <textarea id="story" maxlength="1500" required placeholder="Share their life, faith, family and legacy"></textarea><div class="error"></div></div>
 
               <div><label for="service">Memorial service details</label><input id="service" placeholder="Date, time and venue"><div class="error"></div></div>
-              <div><label for="burial">Burial details</label><input id="burial" placeholder="Date, time and place"><div class="error"></div></div>
+              <div><label for="burial">Funeral service details</label><input id="burial" placeholder="Date, time and place"><div class="error"></div></div>
 
               <div><label for="livestream">Livestream Link (YouTube, optional)</label>
                 <input id="livestream" type="url" placeholder="e.g. https://youtube.com/live/..."><div class="error"></div></div>
@@ -88,24 +102,42 @@
               <div><label for="program">Funeral program (PDF, optional, max 5 MB)</label>
                 <input id="program" type="file" accept="application/pdf"><div class="error"></div></div>
 
+              <!-- CONTRIBUTION SECTION -->
               <h3 style="margin-top:14px">Contribution to family <span class="small">(optional)</span></h3>
-              <p class="small">Fill this in only if the family welcomes contributions.</p>
               
-              <div class="row">
-                <div><label for="fund-target">Fundraising Target (KSh)</label><input id="fund-target" type="number" placeholder="e.g. 500000"><div class="error"></div></div>
-                <div><label for="fund-reason">What the funds support</label><input id="fund-reason" maxlength="100" placeholder="e.g. Hospital bills"><div class="error"></div></div>
+              <div style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="enable-fundraising" style="width: auto; min-height: auto; transform: scale(1.2); cursor: pointer;">
+                <label for="enable-fundraising" style="margin: 0; font-weight: 500; cursor: pointer; color: var(--ink);">Enable fundraising and contribution details</label>
               </div>
 
-              <div class="row">
-                <div><label for="mpesa-number">M-Pesa number</label><input id="mpesa-number" type="tel" placeholder="+254 7XX XXX XXX"><div class="error"></div></div>
-                <div><label for="mpesa-name">M-Pesa registered name</label><input id="mpesa-name" maxlength="60"><div class="error"></div></div>
+              <div id="fundraising-fields" style="display: none;">
+                <div class="row" style="margin-bottom: 24px;">
+                  <div><label for="fund-target">Fundraising Target (KSh)</label><input id="fund-target" type="number" placeholder="e.g. 500000"><div class="error"></div></div>
+                  <div><label for="fund-reason">What the funds support</label><input id="fund-reason" maxlength="100" placeholder="e.g. Hospital bills"><div class="error"></div></div>
+                </div>
+
+                <h4 style="margin: 0 0 12px; font-size: 1rem; color: var(--soft); font-weight: 600;">Select Payment Methods to Receive Funds:</h4>
+                
+                <div class="payment-methods-grid">
+                  <div class="payment-method-card mpesa-card">
+                    <div class="method-header"><span class="method-icon">📱</span><h4>M-Pesa</h4></div>
+                    <div><label for="mpesa-number">M-Pesa Number</label><input id="mpesa-number" type="tel" placeholder="+254 7XX XXX XXX"><div class="error"></div></div>
+                    <div><label for="mpesa-name">Registered Name</label><input id="mpesa-name" maxlength="60" placeholder="e.g. John Doe"><div class="error"></div></div>
+                  </div>
+
+                  <div class="payment-method-card bank-card">
+                    <div class="method-header"><span class="method-icon">🏦</span><h4>Bank Transfer</h4></div>
+                    <div><label for="bank-name">Bank Name</label><input id="bank-name" maxlength="60" placeholder="e.g. KCB Bank"><div class="error"></div></div>
+                    <div><label for="bank-account">Account Number</label><input id="bank-account" maxlength="40" placeholder="e.g. 1234567890"><div class="error"></div></div>
+                    <div><label for="bank-holder">Account Holder Name</label><input id="bank-holder" maxlength="80" placeholder="e.g. John Doe"><div class="error"></div></div>
+                  </div>
+                </div>
+
+                <div style="margin-top: 16px;">
+                  <label for="contribution-contact">Family Contact for Contributions (Phone/Email)</label>
+                  <input id="contribution-contact" maxlength="100" placeholder="e.g. 0712 345 678"><div class="error"></div>
+                </div>
               </div>
-              <div class="row">
-                <div><label for="bank-name">Bank</label><input id="bank-name" maxlength="60"><div class="error"></div></div>
-                <div><label for="bank-account">Account number</label><input id="bank-account" maxlength="40"><div class="error"></div></div>
-              </div>
-              <div><label for="bank-holder">Account holder name</label><input id="bank-holder" maxlength="80"><div class="error"></div></div>
-              <div><label for="contribution-contact">Family contact for contributions</label><input id="contribution-contact" maxlength="100"><div class="error"></div></div>
 
               <h3 style="margin-top:14px">Your contact details</h3>
               <div><label for="contact">Your name *</label><input id="contact" required><div class="error"></div></div>
@@ -114,11 +146,11 @@
                 <div><label for="phone">Phone</label><input id="phone" type="tel" placeholder="+254..."><div class="error"></div></div>
               </div>
 
-              <button class="btn gold" type="submit" style="font-size: 1.1rem; padding: 15px;">Proceed to Payment (KSh 3,000)</button>
+              <button class="btn gold" type="submit" style="font-size: 1.1rem; padding: 15px; margin-top: 20px;">Preview Obituary</button>
             </form>
           </div>
 
-          <!-- LIVE PREVIEW -->
+          <!-- LIVE PREVIEW CARD -->
           <aside class="sticky">
             <div class="card">
               <div class="photo"><img id="pv-img" alt="" hidden><span id="pv-init">—</span></div>
@@ -133,12 +165,76 @@
         </div>
       </div>
 
+      <!-- FULL PAGE PREVIEW -->
+      <div id="preview-section" style="display: none;">
+        <div class="center" style="margin-bottom: 32px;">
+          <h2>Preview Your Memorial Page</h2>
+          <p class="lead">Review the details below. If everything looks correct, proceed to payment.</p>
+        </div>
+
+        <header class="post-hero" style="margin-bottom: 40px; border-radius: 12px;">
+          <div class="post-hero-bg" id="prev-bg"></div>
+          <div class="container">
+            <p class="hero-top">In Loving Memory</p>
+            <div class="portrait-ring" id="prev-portrait"></div>
+            <h1 id="prev-name">Name</h1>
+            <p class="hero-dates">
+              <span>Sunrise<b id="prev-born">----</b></span><i>✦</i><span>Sunset<b id="prev-died">----</b></span>
+            </p>
+            <p class="hero-epitaph" id="prev-summary">Summary</p>
+          </div>
+        </header>
+
+        <div class="two-col">
+          <div class="panel">
+            <h2 class="ornate" style="margin-top:0">Life Story</h2>
+            <div id="prev-story" style="font-family: Georgia, serif; line-height: 1.8; font-size: 1.1rem;"></div>
+            
+            <!-- PREVIEW GALLERY -->
+            <div id="prev-gallery-section" style="display: none; margin-top: 32px;">
+              <h2 class="ornate">Photo Gallery</h2>
+              <div class="gallery-grid" id="prev-gallery"></div>
+            </div>
+
+            <div id="prev-funeral-details" style="margin-top: 32px;"></div>
+          </div>
+          
+          <aside class="post-side">
+            <div class="side-box">
+              <h3>Remembering</h3>
+              <p class="facts-list"><span>Home county</span> <span id="prev-county">---</span></p>
+            </div>
+            <div class="side-box" id="prev-contribution-box" style="display: none;">
+              <h3>Contribute to the family</h3>
+              <p class="small" id="prev-fund-reason"></p>
+              <div class="fund-progress">
+                <div class="fund-stats">
+                  <span><strong>KSh 0</strong> raised</span>
+                  <span>Target: KSh <span id="prev-fund-target">0</span></span>
+                </div>
+                <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        <div style="display: flex; gap: 16px; justify-content: center; margin-top: 48px; flex-wrap: wrap;">
+          <button class="btn outline" id="back-to-edit" style="font-size: 1.1rem; padding: 15px 30px;">Edit Details</button>
+          <button class="btn gold" id="proceed-to-payment" style="font-size: 1.1rem; padding: 15px 30px;">Proceed to Payment (KSh 3,000)</button>
+        </div>
+      </div>
+
       <!-- SUCCESS SCREEN -->
-      <div id="success-section" style="display: none; max-width: 600px; margin: 40px auto; text-align: center; background: #fff; padding: 40px 20px; border: 1px solid var(--line); box-shadow: var(--shadow);">
-        <h2 style="color: var(--gold); margin-bottom: 16px; font-size: 2rem;">✓ Payment Confirmed</h2>
-        <p>The memorial page is now live and ready to be shared.</p>
+      <div id="success-section" style="display: none; max-width: 700px; margin: 40px auto; text-align: center; background: #fff; padding: 40px 20px; border: 1px solid var(--line); box-shadow: var(--shadow);">
+        <h2 style="color: var(--gold); margin-bottom: 8px; font-size: 2.2rem;">✓ Payment Confirmed</h2>
+        <p style="font-size: 1.1rem; color: var(--soft); margin-bottom: 32px;">The memorial page is now live and ready to be shared.</p>
         
-        <div style="background: #faf7f1; padding: 24px; border: 1px dashed var(--gold); margin: 28px 0;">
+        <div style="text-align: left; background: #faf7f1; padding: 24px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 28px;">
+          <h3 style="margin-top: 0; border-bottom: 1px solid var(--line); padding-bottom: 12px; font-size: 1.2rem; color: var(--ink);">Obituary Summary</h3>
+          <div id="success-review" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.95rem; margin-top: 16px;"></div>
+        </div>
+
+        <div style="background: #fff; padding: 24px; border: 1px dashed var(--gold); margin: 28px 0;">
           <p style="margin: 0; font-size: 0.9rem; color: var(--soft);">Your Secret PIN for this page is:</p>
           <h1 id="success-pin" style="font-size: 3rem; letter-spacing: 8px; color: #b3261e; margin: 10px 0; font-family: monospace;"></h1>
           <p class="small" style="margin: 0; color: #b3261e; font-weight: bold;">⚠️ Please write this down. You will need it to manage this page.</p>
@@ -170,11 +266,12 @@
   </div>
 </div>
 
+<!-- FOOTER -->
 <footer class="footer">
   <div class="container">
     <div class="footer-grid">
       <div>
-        <h3>🕯️ Everlight Memorials</h3>
+        <h3>🕯️ Tribute Hub</h3>
         <p>A place of comfort & remembrance.</p>
         <p style="margin-top: 12px;">
           <a href="tel:0792487000" class="btn gold" style="padding: 8px 16px; font-size: .85rem;">📞 Call Ndanda Events</a>
@@ -193,21 +290,16 @@
         <ul>
           <li><a href="https://www.facebook.com/mohammad.mawazo/" target="_blank">Facebook Page</a></li>
           <li><a href="https://www.youtube.com/@ndandaeventsltd911" target="_blank">YouTube Channel</a></li>
-          <li>📞 0792 487000(Ndanda Events)</li>
+          <li>📞 0792 487000 (Ndanda Events)</li>
         </ul>
       </div>
     </div>
     <div class="copy">
-      © <span id="year"></span> Everlight Memorials. All rights reserved.
-      
-      <!-- Discreet Admin Link -->
+      © <span id="year"></span> Tribute Hub. All rights reserved.
       <span style="margin-left: 10px; font-size: 0.75rem; opacity: 0.5;">
         | <a href="admin.html" style="color: inherit; text-decoration: underline;">Staff Login</a>
       </span>
-      
       <br><br>
-      
-      <!-- NEW CLICKABLE LOGO -->
       <span class="powered-by" style="display: inline-flex; align-items: center; justify-content: center; gap: 10px; margin-top: 16px;">
         POWERED BY:
         <a href="https://www.ndandaevents.com/" target="_blank" rel="noopener noreferrer" style="display: inline-block;">
@@ -220,5 +312,30 @@
 
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const checkbox = document.getElementById("enable-fundraising");
+    const fields = document.getElementById("fundraising-fields");
+
+    if (checkbox && fields) {
+      checkbox.addEventListener("change", (e) => {
+        if (e.target.checked) {
+          fields.style.display = "block";
+        } else {
+          fields.style.display = "none";
+          document.getElementById("fund-target").value = "";
+          document.getElementById("fund-reason").value = "";
+          document.getElementById("mpesa-number").value = "";
+          document.getElementById("mpesa-name").value = "";
+          document.getElementById("bank-name").value = "";
+          document.getElementById("bank-account").value = "";
+          document.getElementById("bank-holder").value = "";
+          document.getElementById("contribution-contact").value = "";
+        }
+      });
+    }
+  });
+</script>
 </body>
 </html>
