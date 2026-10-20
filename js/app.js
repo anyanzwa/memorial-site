@@ -1,5 +1,5 @@
 /* =====================================================================
-   Tribute Hub: app.js (Supabase Version)
+   Tribute Hub: app.js (Supabase Version - Boss Updates)
    ===================================================================== */
 
 /* ---------- 0. SUPABASE SETUP ---------- */
@@ -473,13 +473,41 @@ async function setupObituary() {
   if ($('#og-desc')) $('#og-desc').setAttribute('content', `View the life story of ${o.name} and leave a tribute.`);
   if ($('#og-image') && o.photo_url) $('#og-image').setAttribute('content', o.photo_url);
 
-  function getEmbedUrl(url) {
+  /* ---- Extract a YouTube video ID from any YouTube URL form ---- */
+  function getVideoId(url) {
     if (!url) return "";
-    if (url.includes("youtube.com/embed/") || url.includes("youtu.be/")) return url.replace("youtu.be/", "youtube.com/embed/");
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-    const match = url.match(regExp);
-    if (match && match[2].length === 11) return `https://www.youtube.com/embed/${match[2]}`;
-    return url; 
+    const trimmed = url.trim();
+
+    // Already an embed URL
+    if (trimmed.includes("youtube.com/embed/")) {
+      return trimmed.split("embed/")[1].split(/[?&#]/)[0];
+    }
+    // youtube.com/live/VIDEOID (live streams)
+    const liveMatch = trimmed.match(/youtube\.com\/live\/([a-zA-Z0-9_-]{11})/);
+    if (liveMatch) return liveMatch[1];
+    // youtu.be/VIDEOID
+    const shortMatch = trimmed.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+    if (shortMatch) return shortMatch[1];
+    // watch?v=VIDEOID or &v=VIDEOID
+    const watchMatch = trimmed.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+    if (watchMatch) return watchMatch[1];
+    // Legacy fallback
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|live\/)([^#\&\?]*).*/;
+    const match = trimmed.match(regExp);
+    if (match && match[2].length === 11) return match[2];
+
+    return "";
+  }
+
+  const videoId = getVideoId(o.livestream);
+
+  /* Pre-load the YouTube IFrame API if this memorial has a livestream */
+  if (videoId) {
+    if (!window.YT && !document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      document.head.appendChild(tag);
+    }
   }
 
   const paragraphs = o.story.split(/\n+/).filter(Boolean).map((text) => `<p>${safe(text)}</p>`).join("");
@@ -494,11 +522,19 @@ async function setupObituary() {
       </div>
     ` : "";
 
-  const livestreamSection = o.livestream ? `
+  const livestreamSection = videoId ? `
       <h2 class="ornate">Watch the Funeral</h2>
-      <p class="small center" style="margin-bottom: 16px;">For those unable to attend in person, the service can be viewed here.</p>
-      <div class="livestream-wrapper">
-        <iframe src="${getEmbedUrl(o.livestream)}" title="Funeral Livestream" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+      <p class="small center" style="margin-bottom: 16px;">Click below to watch the livestream in memory of ${safe(o.name)}.</p>
+      
+      <div class="video-thumbnail-wrap" id="video-wrap">
+        ${o.photo_url 
+          ? `<img src="${safe(o.photo_url)}" alt="Video Thumbnail" class="video-thumb-img">` 
+          : `<div class="video-thumb-img" style="background: linear-gradient(135deg, #2f4a6d, #1f2a3d); display: grid; place-items: center; color: #fff; font-size: 4rem;">${initials(o.name)}</div>`
+        }
+        <div class="video-overlay"></div>
+        <button class="video-play-btn" data-video-id="${videoId}" type="button" aria-label="Play livestream">
+          <svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32"><path d="M8 5v14l11-7z"/></svg>
+        </button>
       </div>
     ` : "";
 
@@ -526,12 +562,25 @@ async function setupObituary() {
           <p class="small" style="margin-bottom: 10px;">${safe(o.fund_reason || 'Help the family with funeral expenses.')}</p>
           <div class="fund-progress">
             <div class="fund-stats">
-              <span><strong id="fund-raised">KSh 0</strong> raised</span>
+              <span><strong id="fund-raised">KSh 0</strong> paid</span>
               <span>Target: KSh ${Number(o.fund_target).toLocaleString()}</span>
             </div>
             <div class="progress-bar"><div class="progress-fill" id="fund-bar" style="width: 0%"></div></div>
           </div>
-          <button class="btn gold" id="btn-contribute" style="width:100%; margin-top: 16px;">Contribute via M-Pesa / Card</button>
+          
+          <!-- WhatsApp Style Ledger Summary -->
+          <div class="ledger-summary" id="ledger-summary">
+            <div>Pledged<br><strong id="sum-pledged">KSh 0</strong></div>
+            <div>Paid<br><strong id="sum-paid">KSh 0</strong></div>
+            <div>Balance<br><strong id="sum-balance">KSh 0</strong></div>
+          </div>
+
+          <button class="btn gold" id="btn-contribute" style="width:100%; margin-top: 16px;">Contribute via M-Pesa</button>
+          
+          <h4 style="margin-top: 24px; font-size: 0.9rem; color: var(--soft);">Recent Contributions</h4>
+          <div id="ledger-list" style="max-height: 200px; overflow-y: auto;">
+             <p class="small">Loading...</p>
+          </div>
         ` : `
           ${o.mpesa_number ? `<p><b>M-Pesa</b><br>${safe(o.mpesa_number)} ${o.mpesa_name ? "<span class='small'>(" + safe(o.mpesa_name) + ")</span>" : ""}</p>` : ""}
           ${o.bank_name ? `<p><b>Bank</b><br>${safe(o.bank_name || "")} · ${safe(o.bank_account || "")}<br><span class="small">${safe(o.bank_holder || "")}</span></p>` : ""}
@@ -551,11 +600,14 @@ async function setupObituary() {
         </p>
         <p class="hero-epitaph">${safe(o.summary)}</p>
         <p class="post-meta">Age ${o.age} · ${safe(o.county)} County · ${minutes} min read</p>
-        <p class="hero-candle">
-          <button class="btn gold" id="candle">🕯️ Light a candle</button>
-          ${o.livestream ? `<a href="#livestream-section" class="btn outline" style="color:#fff; border-color:#fff; margin-top:8px;">📺 Watch Livestream</a>` : ""}
-          <span id="candle-count" class="small"></span>
-        </p>
+        
+        <!-- Side-by-Side Hero Buttons -->
+        <div style="display: flex; gap: 12px; justify-content: center; margin-top: 20px; flex-wrap: wrap;">
+          <button class="btn gold" id="candle">🔥 Light a candle</button>
+          ${hasFundTarget ? `<button class="btn gold" id="btn-contribute-hero">🤍 Contribute</button>` : ""}
+          ${videoId ? `<a href="#livestream-section" class="btn outline" style="color:#fff; border-color:#fff;">Watch Livestream</a>` : ""}
+        </div>
+        <span id="candle-count" class="small" style="display: block; margin-top: 12px; color: #c9d2e0;"></span>
       </div>
     </header>
 
@@ -623,6 +675,69 @@ async function setupObituary() {
   });
   showCandles();
 
+  // --- VIDEO PLAYER LOGIC (YouTube IFrame Player API) ---
+  window.playLivestream = (vid) => {
+    if (!vid) {
+      alert("This livestream link is invalid or unavailable.");
+      return;
+    }
+
+    const wrap = $("#video-wrap");
+    if (!wrap) return;
+
+    // Swap thumbnail for a clean player holder (keeps the 16:9 wrap)
+    wrap.innerHTML = `
+      <div class="youtube-player-holder">
+        <div id="youtube-player"></div>
+      </div>
+    `;
+
+    const buildPlayer = () => {
+      new window.YT.Player("youtube-player", {
+        videoId: vid,
+        width: "100%",
+        height: "100%",
+        playerVars: {
+          autoplay: 1,
+          playsinline: 1,
+          rel: 0,
+          modestbranding: 1
+          
+        },
+        events: {
+          onReady: (event) => { try { event.target.playVideo(); } catch (e) {} }
+        }
+      });
+    };
+
+    // API already loaded? Build immediately.
+    if (window.YT && typeof window.YT.Player === "function") {
+      buildPlayer();
+      return;
+    }
+
+    // Otherwise wait for the API to finish loading (poll up to 10s)
+    let waited = 0;
+    const poll = setInterval(() => {
+      waited += 100;
+      if (window.YT && typeof window.YT.Player === "function") {
+        clearInterval(poll);
+        buildPlayer();
+      } else if (waited >= 10000) {
+        clearInterval(poll);
+        wrap.innerHTML = `<p class="small center" style="padding: 20px;">Could not load the video player. Please refresh and try again.</p>`;
+      }
+    }, 100);
+  };
+
+  // Wire up the play button once the livestream section is in the DOM
+  const playBtn = document.querySelector(".video-play-btn");
+  if (playBtn) {
+    playBtn.addEventListener("click", function () {
+      window.playLivestream(this.dataset.videoId);
+    });
+  }
+
   $("#whatsapp").href = "https://wa.me/?text=" + encodeURIComponent("In loving memory of " + o.name + ": " + location.href);
   $("#copy").addEventListener("click", async () => {
     try { await navigator.clipboard.writeText(location.href); $("#copy").textContent = "Link copied ✓"; }
@@ -631,6 +746,7 @@ async function setupObituary() {
 
   $("#download-poster").addEventListener("click", () => generatePoster(o));
 
+  // --- EMOJI TRIBUTES ---
   async function showTributes() {
     const { data: list, error } = await db
       .from('tributes')
@@ -642,14 +758,35 @@ async function setupObituary() {
     
     $("#comments-title").textContent = "Tributes (" + list.length + ")";
     $("#tributes").innerHTML = list.length
-      ? list.map((t) => `
+      ? list.map((t) => {
+          const r = t.reactions || {};
+          return `
           <div class="comment">
             <div class="c-avatar">${initials(t.name)}</div>
-            <div><b>${safe(t.name)}</b> <span class="small">· ${new Date(t.created_at).toLocaleDateString("en-KE")}</span><p>${safe(t.message)}</p></div>
-          </div>`).join("")
+            <div style="flex: 1;">
+              <b>${safe(t.name)}</b> <span class="small">· ${new Date(t.created_at).toLocaleDateString("en-KE")}</span>
+              <p>${safe(t.message)}</p>
+              
+              <!-- EMOJI BAR -->
+              <div class="tribute-reactions">
+                <button onclick="reactToTribute('${t.id}', 'heart')">❤️ ${r.heart || 0}</button>
+                <button onclick="reactToTribute('${t.id}', 'pray')">🙏 ${r.pray || 0}</button>
+                <button onclick="reactToTribute('${t.id}', 'candle')">🕯️ ${r.candle || 0}</button>
+              </div>
+            </div>
+          </div>`;
+        }).join("")
       : '<p class="small">No tributes yet. Be the first to share a memory.</p>';
   }
   
+  window.reactToTribute = async (tributeId, type) => {
+    const { data } = await db.from('tributes').select('reactions').eq('id', tributeId).single();
+    let r = data.reactions || {};
+    r[type] = (r[type] || 0) + 1;
+    await db.from('tributes').update({ reactions: r }).eq('id', tributeId);
+    showTributes();
+  };
+
   $("#tribute-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     const name = $("#t-name");
@@ -682,68 +819,164 @@ async function setupObituary() {
   
   showTributes();
 
-  if (hasFundTarget) {
-    const updateProgress = () => {
-      const raised = Number(localStorage.getItem(`raised_${o.id}`) || 0);
-      const pct = Math.min((raised / o.fund_target) * 100, 100);
-      if ($("#fund-raised")) $("#fund-raised").textContent = `KSh ${raised.toLocaleString()}`;
-      if ($("#fund-bar")) $("#fund-bar").style.width = `${pct}%`;
-    };
-    updateProgress();
+  // --- WHATSAPP STYLE CONTRIBUTION LEDGER ---
+  async function loadLedger() {
+    if (!hasFundTarget) return;
+    
+    const { data: donations } = await db.from('donations').select('*').eq('obituary_id', o.id).order('created_at', { ascending: false });
+    
+    if (!donations) return;
 
-    if ($("#btn-contribute")) {
-      $("#btn-contribute").onclick = () => {
-        $("#contribute-modal").hidden = false;
-        document.body.style.overflow = 'hidden';
+    let totalPledged = 0;
+    let totalPaid = 0;
+
+    donations.forEach(d => {
+      totalPledged += (d.pledge_amount || 0);
+      totalPaid += (d.paid_amount || 0);
+    });
+
+    const balance = totalPledged - totalPaid;
+
+    $("#sum-pledged").textContent = "KSh " + totalPledged.toLocaleString();
+    $("#sum-paid").textContent = "KSh " + totalPaid.toLocaleString();
+    $("#sum-balance").textContent = "KSh " + balance.toLocaleString();
+    
+    const pct = Math.min((totalPaid / o.fund_target) * 100, 100);
+    if ($("#fund-raised")) $("#fund-raised").textContent = `KSh ${totalPaid.toLocaleString()}`;
+    if ($("#fund-bar")) $("#fund-bar").style.width = `${pct}%`;
+
+    const list = $("#ledger-list");
+    if (donations.length === 0) {
+      list.innerHTML = '<p class="small">No contributions yet.</p>';
+    } else {
+      list.innerHTML = `<table class="ledger-table">
+        <thead><tr><th>Name</th><th>Pledged</th><th>Paid</th><th>Status</th></tr></thead>
+        <tbody>
+          ${donations.map(d => `
+            <tr>
+              <td>${safe(d.donor_name)}</td>
+              <td>${(d.pledge_amount || 0).toLocaleString()}</td>
+              <td>${(d.paid_amount || 0).toLocaleString()}</td>
+              <td class="${d.paid_amount >= d.pledge_amount ? 'paid' : 'pending'}">
+                ${d.paid_amount >= d.pledge_amount ? 'Paid' : 'Pending'}
+              </td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>`;
+    }
+  }
+
+  loadLedger();
+
+  const openContributeModal = () => {
+    $("#contribute-modal").hidden = false;
+    document.body.style.overflow = 'hidden';
+  };
+  
+  if ($("#btn-contribute")) $("#btn-contribute").onclick = openContributeModal;
+  if ($("#btn-contribute-hero")) $("#btn-contribute-hero").onclick = openContributeModal;
+
+  if (hasFundTarget) {
+    $("#close-modal").onclick = () => {
+      $("#contribute-modal").hidden = true;
+      document.body.style.overflow = '';
+    };
+
+    const amountInput = $("#c-amount");
+    const actionInput = $("#c-action");
+    const submitBtn   = $("#submit-contribution");
+    let currentAction = "pay";
+
+    // Update submit button label based on action + amount
+    const updateSubmitLabel = () => {
+      const amt = Number(amountInput.value || 0);
+      const formatted = amt.toLocaleString();
+      if (currentAction === "pay") {
+        submitBtn.innerHTML = amt > 0 ? `Pay KSh ${formatted} Now` : `Pay Now`;
+      } else {
+        submitBtn.innerHTML = amt > 0 ? `Pledge KSh ${formatted}` : `Pledge`;
+      }
+    };
+
+    // Preset amount buttons
+    document.querySelectorAll('.btn-amount').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.btn-amount').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        amountInput.value = btn.dataset.amt;
+        updateSubmitLabel();
       };
-      $("#close-modal").onclick = () => {
+    });
+
+    // Custom amount input
+    amountInput.oninput = () => {
+      document.querySelectorAll('.btn-amount').forEach(b => b.classList.remove('active'));
+      updateSubmitLabel();
+    };
+
+    // Pay vs Pledge toggle
+    document.querySelectorAll('.action-btn').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentAction = btn.dataset.action;
+        actionInput.value = currentAction;
+        updateSubmitLabel();
+      };
+    });
+
+    updateSubmitLabel();
+
+    $("#contribute-form").onsubmit = async (e) => {
+      e.preventDefault();
+      const amt = Number(amountInput.value);
+      if (!amt || amt < 1) {
+        amountInput.focus();
+        return;
+      }
+      const name = $("#c-name").value.trim();
+      const phone = $("#c-phone").value.trim();
+      if (!name || !phone) return;
+
+      submitBtn.textContent = 'Processing...';
+      submitBtn.disabled = true;
+      
+      const paidAmt = currentAction === 'pay' ? amt : 0;
+      
+      const { error: donationError } = await db.from('donations').insert([{
+        obituary_id: o.id,
+        donor_name: name,
+        donor_phone: phone,
+        amount: amt,
+        pledge_amount: amt,
+        paid_amount: paidAmt,
+        status: currentAction === 'pay' ? 'paid' : 'pending'
+      }]);
+
+      if (donationError) {
+        console.error("Donation Error:", donationError);
+        alert("Could not record contribution: " + donationError.message);
+        submitBtn.textContent = 'Error. Try again.';
+        submitBtn.disabled = false;
+        return;
+      }
+
+      setTimeout(() => {
+        loadLedger();
+        submitBtn.disabled = false;
+        $("#contribute-form").reset();
+        document.querySelectorAll('.btn-amount').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector('.action-btn[data-action="pay"]').classList.add('active');
+        currentAction = 'pay';
+        actionInput.value = 'pay';
+        updateSubmitLabel();
         $("#contribute-modal").hidden = true;
         document.body.style.overflow = '';
-      };
-      document.querySelectorAll('.btn-amount').forEach(btn => {
-        btn.onclick = () => {
-          document.querySelectorAll('.btn-amount').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          $("#c-amount").value = btn.dataset.amt;
-          $("#pay-amt").textContent = Number(btn.dataset.amt).toLocaleString();
-        };
-      });
-      $("#c-amount").oninput = (e) => {
-        $("#pay-amt").textContent = Number(e.target.value || 0).toLocaleString();
-      };
-      
-      $("#contribute-form").onsubmit = async (e) => {
-        e.preventDefault();
-        const amt = Number($("#c-amount").value);
-        const name = $("#c-name").value.trim();
-        const phone = $("#c-phone").value.trim();
-        const btn = e.target.querySelector('button[type="submit"]');
-        
-        btn.textContent = 'Processing...';
-        btn.disabled = true;
-        
-        await db.from('donations').insert([{
-          obituary_id: o.id,
-          donor_name: name || "Anonymous",
-          donor_phone: phone,
-          amount: amt
-        }]);
-
-        setTimeout(() => {
-          const current = Number(localStorage.getItem(`raised_${o.id}`) || 0);
-          localStorage.setItem(`raised_${o.id}`, current + amt);
-          
-          updateProgress();
-          btn.innerHTML = `Pay KSh 0`;
-          btn.disabled = false;
-          $("#contribute-form").reset();
-          $("#contribute-modal").hidden = true;
-          document.body.style.overflow = '';
-          
-          alert(`Thank you ${name || ''}! Your contribution of KSh ${amt.toLocaleString()} has been recorded.`);
-        }, 1500);
-      };
-    }
+        alert(`Thank you ${name}! Your ${currentAction === 'pay' ? 'payment' : 'pledge'} of KSh ${amt.toLocaleString()} has been recorded.`);
+      }, 1500);
+    };
   }
 }
 
@@ -929,8 +1162,12 @@ async function setupDashboard() {
       `).join("");
     }
 
-    const raised = Number(localStorage.getItem(`raised_${currentId}`) || 0);
-    $("#dash-raised").textContent = `KSh ${raised.toLocaleString()}`;
+    // Dashboard Ledger: Now uses actual PAID amounts from database
+    const { data: donations } = await db.from('donations').select('*').eq('obituary_id', currentId);
+    let totalPaid = 0;
+    if (donations) donations.forEach(d => totalPaid += (d.paid_amount || 0));
+    
+    $("#dash-raised").textContent = `KSh ${totalPaid.toLocaleString()}`;
   }
 
   window.deleteTribute = async (tributeId) => {
@@ -950,9 +1187,10 @@ async function setupDashboard() {
       return;
     }
 
-    let csv = "Date,Donor Name,Phone Number,Amount (KSh)\n";
+    // CSV now includes Pledged vs Paid
+    let csv = "Date,Donor Name,Phone,Pledged (KSh),Paid (KSh),Status\n";
     donations.forEach(d => {
-      csv += `"${new Date(d.created_at).toLocaleDateString("en-KE")}","${d.donor_name}","${d.donor_phone}",${d.amount}\n`;
+      csv += `"${new Date(d.created_at).toLocaleDateString("en-KE")}","${d.donor_name}","${d.donor_phone}",${d.pledge_amount || 0},${d.paid_amount || 0},"${d.status}"\n`;
     });
 
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -1040,7 +1278,12 @@ async function setupAdmin() {
     if (obits) {
       for (const o of obits) {
         const { count: tribs } = await db.from('tributes').select('*', { count: 'exact', head: true }).eq('obituary_id', o.id);
-        const raised = Number(localStorage.getItem(`raised_${o.id}`) || 0);
+        
+        // Admin table now uses PAID amounts from database
+        const { data: donations } = await db.from('donations').select('paid_amount').eq('obituary_id', o.id);
+        let raised = 0;
+        if (donations) donations.forEach(d => raised += (d.paid_amount || 0));
+        
         totalRaised += raised;
         totalTributes += (tribs || 0);
 
@@ -1142,7 +1385,9 @@ async function setupAdmin() {
 
     let csv = "Name,County,Date Posted,Funds Raised\n";
     for (const o of obits) {
-      const raised = Number(localStorage.getItem(`raised_${o.id}`) || 0);
+      const { data: donations } = await db.from('donations').select('paid_amount').eq('obituary_id', o.id);
+      let raised = 0;
+      if (donations) donations.forEach(d => raised += (d.paid_amount || 0));
       csv += `"${o.name}","${o.county}","${new Date(o.created_at).toLocaleDateString("en-KE")}",${raised}\n`;
     }
 
