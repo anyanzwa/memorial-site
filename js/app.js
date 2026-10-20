@@ -1,69 +1,57 @@
 /* =====================================================================
-   Tribute Hub Memorials: app.js
+   Tribute Hub: app.js (Supabase Version)
    ===================================================================== */
+
+/* ---------- 0. SUPABASE SETUP ---------- */
+const SUPABASE_URL = "https://fbyudpgnftqsjdavonrk.supabase.co";
+const SUPABASE_KEY = "sb_publishable_COCPqopEzt65pbU__UiKWQ_utlMyn7z";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /* ---------- 1. SMALL HELPERS ---------- */
 const $ = (selector) => document.querySelector(selector);
 
 function safe(text) {
+  if (!text) return "";
   const div = document.createElement("div");
   div.textContent = text;
   return div.innerHTML;
 }
 
 function initials(name) {
+  if (!name) return "";
   return name.split(" ").slice(0, 2).map((word) => word[0]).join("").toUpperCase();
 }
 
-function load(key, fallback) {
-  try { return JSON.parse(localStorage.getItem(key)) || fallback; }
-  catch (e) { return fallback; }
-}
-function save(key, value) {
-  try { localStorage.setItem(key, JSON.stringify(value)); return true; }
-  catch (e) { return false; }
-}
+async function uploadFile(file, folder) {
+  if (!file) return "";
+  const fileExt = file.name ? file.name.split('.').pop() : 'png';
+  const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+  
+  const { data, error } = await db.storage
+    .from('memorial-assets')
+    .upload(fileName, file);
 
-function allObituaries() {
-  return load("saved_obituaries", []).concat(SAMPLE);
-}
+  if (error) {
+    console.error("Upload error:", error);
+    return "";
+  }
 
-/* ---------- 1b. BIG FILES (IndexedDB) ---------- */
-function openFiles() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open("Tribute Hub", 1);
-    request.onupgradeneeded = () => request.result.createObjectStore("files");
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-async function saveFile(key, file) {
-  const db = await openFiles();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction("files", "readwrite");
-    tx.objectStore("files").put(file, key);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-async function loadFile(key) {
-  const db = await openFiles();
-  return new Promise((resolve, reject) => {
-    const request = db.transaction("files").objectStore("files").get(key);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
+  const { data: publicURLData } = db.storage
+    .from('memorial-assets')
+    .getPublicUrl(fileName);
+
+  return publicURLData.publicUrl;
 }
 
 /* ---------- 2. OBITUARY CARD ---------- */
 function cardHTML(o) {
-  const picture = o.photo ? `<img src="${safe(o.photo)}" alt="">` : initials(o.name);
+  const picture = o.photo_url ? `<img src="${safe(o.photo_url)}" alt="">` : initials(o.name);
   return `
     <a class="card" href="obituary.html?id=${encodeURIComponent(o.id)}">
       <div class="photo">${picture}</div>
       <div class="card-body">
         <h3>${safe(o.name)}</h3>
-        <p class="small">${o.born} – ${o.died.slice(0, 4)} · Age ${o.age}</p>
+        <p class="small">${o.born} – ${o.died ? o.died.slice(0, 4) : '????'} · Age ${o.age}</p>
         <p class="small summary">${safe(o.summary)}</p>
         <span class="meta">${safe(o.county)} County</span>
       </div>
@@ -140,16 +128,29 @@ function setupSite() {
 }
 
 /* ---------- 4. HOME PAGE ---------- */
-function setupHome() {
-  const all = allObituaries();
-
+async function setupHome() {
   const recent = $("#recent");
+  const recent2 = $("#recent-2");
+  
+  if (recent) recent.innerHTML = "<p class='small center'>Loading...</p>";
+  if (recent2) recent2.innerHTML = "<p class='small center'>Loading...</p>";
+
+  const { data: all, error } = await db
+    .from('obituaries')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error("Error fetching obituaries:", error);
+    if (recent) recent.innerHTML = "<p class='small center'>Could not load data.</p>";
+    return;
+  }
+
   if (recent) {
     recent.innerHTML = all.slice(0, 4).map(cardHTML).join("");
     cardEffects(recent);
   }
 
-  const recent2 = $("#recent-2");
   if (recent2) {
     recent2.innerHTML = all.slice(4, 8).map(cardHTML).join("");
     cardEffects(recent2);
@@ -175,14 +176,26 @@ function setupHome() {
 }
 
 /* ---------- 5. OBITUARIES PAGE ---------- */
-function setupList() {
+async function setupList() {
   const list = $("#list");
   const search = $("#q");
   const county = $("#county");
-  const all = allObituaries();
+  if (!list) return;
+
+  list.innerHTML = "<p class='small center'>Loading obituaries...</p>";
+
+  const { data: all, error } = await db
+    .from('obituaries')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    list.innerHTML = "<p class='small center'>Could not load data.</p>";
+    return;
+  }
 
   const counties = [...new Set(all.map((o) => o.county))].sort();
-  counties.forEach((c) => county.add(new Option(c, c)));
+  counties.forEach((c) => { if(c) county.add(new Option(c, c)); });
 
   function show() {
     const word = search.value.trim().toLowerCase();
@@ -219,9 +232,9 @@ function checkFields(fields) {
   return ok;
 }
 
-/* ---------- 7. SUBMIT PAGE (With Preview & Payment Gate) ---------- */
+/* ---------- 7. SUBMIT PAGE ---------- */
 let pendingObituary = null;
-let pendingProgramFile = null;
+let pendingFiles = { photo: null, gallery: [], program: null };
 
 function setupSubmit() {
   const form = $("#submit-form");
@@ -230,8 +243,8 @@ function setupSubmit() {
 
   function updatePreview() {
     const name = get("name").value.trim() || "Full name";
-    const born = get("born").value.slice(0, 4) || "";
-    const died = get("died").value.slice(0, 4) || "";
+    const born = get("born").value.slice(0, 4) || "????";
+    const died = get("died").value.slice(0, 4) || "????";
     $("#pv-init").textContent = initials(name);
     $("#pv-name").textContent = name;
     $("#pv-dates").textContent = born + " – " + died;
@@ -250,71 +263,6 @@ function setupSubmit() {
   form.addEventListener("input", updatePreview);
   updatePreview();
 
-  function readPhoto() {
-    return new Promise((resolve, reject) => {
-      const file = get("photo").files[0];
-      if (!file) return resolve("");
-      if (!file.type.startsWith("image/")) return reject("Please choose an image file (JPG or PNG).");
-      if (file.size > 5 * 1024 * 1024) return reject("The photo must be smaller than 5 MB.");
-      const reader = new FileReader();
-      reader.onerror = () => reject("Could not read the photo.");
-      reader.onload = () => {
-        const image = new Image();
-        image.onerror = () => reject("Could not read the photo.");
-        image.onload = () => {
-          const scale = Math.min(1, 600 / Math.max(image.width, image.height));
-          const canvas = document.createElement("canvas");
-          canvas.width = Math.round(image.width * scale);
-          canvas.height = Math.round(image.height * scale);
-          canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
-          resolve(canvas.toDataURL("image/jpeg", 0.8));
-        };
-        image.src = reader.result;
-      };
-      reader.readAsDataURL(file);
-    });
-  }
-
-  function readGallery() {
-    return new Promise((resolve, reject) => {
-      const files = get("gallery").files;
-      if (!files || files.length === 0) return resolve([]);
-      if (files.length > 5) return reject("You can only upload a maximum of 5 gallery photos.");
-      
-      const promises = Array.from(files).map(file => {
-        return new Promise((res, rej) => {
-          if (!file.type.startsWith("image/")) return rej("Please choose only image files.");
-          if (file.size > 5 * 1024 * 1024) return rej("Each photo must be smaller than 5 MB.");
-          const reader = new FileReader();
-          reader.onload = () => {
-            const image = new Image();
-            image.onload = () => {
-              const scale = Math.min(1, 800 / Math.max(image.width, image.height));
-              const canvas = document.createElement("canvas");
-              canvas.width = Math.round(image.width * scale);
-              canvas.height = Math.round(image.height * scale);
-              canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
-              res(canvas.toDataURL("image/jpeg", 0.8));
-            };
-            image.src = reader.result;
-          };
-          reader.readAsDataURL(file);
-        });
-      });
-      Promise.all(promises).then(resolve).catch(reject);
-    });
-  }
-
-  function readPdf() {
-    return new Promise((resolve, reject) => {
-      const file = get("program").files[0];
-      if (!file) return resolve("");
-      if (file.type !== "application/pdf") return reject("Please choose a PDF file.");
-      if (file.size > 5 * 1024 * 1024) return reject("The PDF must be smaller than 5 MB.");
-      resolve(file);
-    });
-  }
-
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
@@ -322,17 +270,9 @@ function setupSubmit() {
     if (!checkFields(required)) return;
     if (get("phone")?.value && !checkFields([get("phone")])) return;
 
-    let photo = "";
-    try { photo = await readPhoto(); get("photo").parentElement.querySelector(".error").textContent = ""; }
-    catch (message) { get("photo").parentElement.querySelector(".error").textContent = message; return; }
-
-    let gallery = [];
-    try { gallery = await readGallery(); get("gallery").parentElement.querySelector(".error").textContent = ""; }
-    catch (message) { get("gallery").parentElement.querySelector(".error").textContent = message; return; }
-
-    let program = "";
-    try { program = await readPdf(); }
-    catch (message) { get("program").parentElement.querySelector(".error").textContent = message; return; }
+    pendingFiles.photo = get("photo").files[0];
+    pendingFiles.gallery = Array.from(get("gallery").files);
+    pendingFiles.program = get("program").files[0];
 
     const born = get("born").value.slice(0, 4);
     const died = get("died").value;
@@ -340,26 +280,27 @@ function setupSubmit() {
     const securePin = Math.floor(1000 + Math.random() * 9000).toString();
 
     pendingObituary = {
-      id: get("name").value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now(),
-      name: get("name").value.trim(), born: born, died: died, age: Number(died.slice(0, 4)) - Number(born),
-      county: get("county").value, summary: story.slice(0, 110) + (story.length > 110 ? "…" : ""), story: story,
-      service: get("service").value.trim(), burial: get("burial").value.trim(), photo: photo, program: program ? "idb" : "",
-      gallery: gallery, // <--- SAVE GALLERY
+      name: get("name").value.trim(), 
+      born: born, died: died, age: Number(died.slice(0, 4)) - Number(born),
+      county: get("county").value, 
+      summary: story.slice(0, 110) + (story.length > 110 ? "…" : ""), 
+      story: story,
+      service: get("service").value.trim(), 
+      burial: get("burial").value.trim(), 
       livestream: get("livestream")?.value.trim() || "",
-      mpesaNumber: get("mpesa-number")?.value.trim() || "", mpesaName: get("mpesa-name")?.value.trim() || "",
-      bankName: get("bank-name")?.value.trim() || "", bankAccount: get("bank-account")?.value.trim() || "",
-      bankHolder: get("bank-holder")?.value.trim() || "", contributionContact: get("contribution-contact")?.value.trim() || "",
-      fundTarget: get("fund-target")?.value ? Number(get("fund-target").value) : 0,
-      fundReason: get("fund-reason")?.value.trim() || "",
-      securePin: securePin,
-      contact: get("contact").value.trim(),
-      email: get("email").value.trim(),
-      phone: get("phone")?.value.trim() || ""
+      mpesa_number: get("mpesa-number")?.value.trim() || "", 
+      mpesa_name: get("mpesa-name")?.value.trim() || "",
+      bank_name: get("bank-name")?.value.trim() || "", 
+      bank_account: get("bank-account")?.value.trim() || "",
+      bank_holder: get("bank-holder")?.value.trim() || "", 
+      contribution_contact: get("contribution-contact")?.value.trim() || "",
+      fund_target: get("fund-target")?.value ? Number(get("fund-target").value) : 0,
+      fund_reason: get("fund-reason")?.value.trim() || "",
+      secure_pin: securePin,
+      family_email: get("email").value.trim(),
+      family_phone: get("phone")?.value.trim() || ""
     };
 
-    pendingProgramFile = program;
-
-    // POPULATE PREVIEW
     $("#prev-name").textContent = pendingObituary.name;
     $("#prev-born").textContent = pendingObituary.born;
     $("#prev-died").textContent = pendingObituary.died.slice(0, 4);
@@ -369,18 +310,18 @@ function setupSubmit() {
     const storyHTML = pendingObituary.story.split(/\n+/).filter(Boolean).map((text) => `<p>${safe(text)}</p>`).join("");
     $("#prev-story").innerHTML = storyHTML;
 
-    if (pendingObituary.photo) {
-      $("#prev-portrait").innerHTML = `<img src="${safe(pendingObituary.photo)}" alt="Photo">`;
-      $("#prev-bg").style.backgroundImage = `url("${pendingObituary.photo}")`;
+    if (pendingFiles.photo) {
+      const photoUrl = URL.createObjectURL(pendingFiles.photo);
+      $("#prev-portrait").innerHTML = `<img src="${photoUrl}" alt="Photo">`;
+      $("#prev-bg").style.backgroundImage = `url("${photoUrl}")`;
     } else {
       $("#prev-portrait").textContent = initials(pendingObituary.name);
       $("#prev-bg").style.backgroundImage = 'none';
     }
 
-    // POPULATE PREVIEW GALLERY
-    if (gallery.length > 0) {
+    if (pendingFiles.gallery.length > 0) {
       $("#prev-gallery-section").style.display = "block";
-      $("#prev-gallery").innerHTML = gallery.map(img => `<img src="${img}" alt="Gallery Photo">`).join("");
+      $("#prev-gallery").innerHTML = pendingFiles.gallery.map(file => `<img src="${URL.createObjectURL(file)}" alt="Gallery Photo">`).join("");
     } else {
       $("#prev-gallery-section").style.display = "none";
     }
@@ -394,10 +335,10 @@ function setupSubmit() {
     }
     $("#prev-funeral-details").innerHTML = funeralHTML;
 
-    if (pendingObituary.fundTarget > 0) {
+    if (pendingObituary.fund_target > 0) {
       $("#prev-contribution-box").style.display = "block";
-      $("#prev-fund-reason").textContent = pendingObituary.fundReason || "Help the family with funeral expenses.";
-      $("#prev-fund-target").textContent = Number(pendingObituary.fundTarget).toLocaleString();
+      $("#prev-fund-reason").textContent = pendingObituary.fund_reason || "Help the family with funeral expenses.";
+      $("#prev-fund-target").textContent = Number(pendingObituary.fund_target).toLocaleString();
     } else {
       $("#prev-contribution-box").style.display = "none";
     }
@@ -430,20 +371,35 @@ document.addEventListener("DOMContentLoaded", () => {
       payBtn.disabled = true;
 
       setTimeout(async () => {
-        if (pendingProgramFile) {
-          try { await saveFile("program_" + pendingObituary.id, pendingProgramFile); }
-          catch (e) { alert("Could not save PDF."); payBtn.textContent = 'Pay via M-Pesa'; payBtn.disabled = false; return; }
+        payBtn.textContent = 'Uploading Files...';
+        
+        const photoUrl = await uploadFile(pendingFiles.photo, 'photos');
+        
+        let galleryUrls = [];
+        for (const file of pendingFiles.gallery) {
+          const url = await uploadFile(file, 'gallery');
+          if (url) galleryUrls.push(url);
         }
         
-        const saved = load("saved_obituaries", []);
-        saved.unshift(pendingObituary);
-        save("saved_obituaries", saved);
+        const programUrl = await uploadFile(pendingFiles.program, 'programs');
 
-        const myMemorials = load("my_memorials", []);
-        if (!myMemorials.includes(pendingObituary.id)) {
-          myMemorials.push(pendingObituary.id);
-          save("my_memorials", myMemorials);
+        pendingObituary.photo_url = photoUrl;
+        pendingObituary.gallery_urls = galleryUrls;
+        pendingObituary.program_url = programUrl;
+
+        const { data, error } = await db
+          .from('obituaries')
+          .insert([pendingObituary])
+          .select();
+
+        if (error) {
+          alert("Database Error: " + error.message);
+          payBtn.textContent = 'Pay via M-Pesa';
+          payBtn.disabled = false;
+          return;
         }
+
+        const newId = data[0].id;
 
         const reviewHTML = `
           <div style="background: #fff; padding: 12px; border: 1px solid var(--line); border-radius: 6px;">
@@ -454,15 +410,15 @@ document.addEventListener("DOMContentLoaded", () => {
           <div style="background: #fff; padding: 12px; border: 1px solid var(--line); border-radius: 6px;">
             <strong style="color: var(--gold); display: block; font-size: 0.8rem; text-transform: uppercase;">Added Features</strong>
             <span class="small">
-              ${pendingObituary.fundTarget > 0 ? '✅ Fundraising Target<br>' : '❌ No Fundraising<br>'}
-              ${pendingObituary.livestream ? '✅ Livestream Link<br>' : '❌ No Livestream<br>'}
-              ${pendingObituary.program ? '✅ Program PDF<br>' : '❌ No Program PDF<br>'}
-              ${pendingObituary.gallery && pendingObituary.gallery.length > 0 ? '✅ Gallery (' + pendingObituary.gallery.length + ' photos)' : '❌ No Gallery Photos'}
+              ${pendingObituary.fund_target > 0 ? '✅ Fundraising<br>' : '❌ No Fundraising<br>'}
+              ${pendingObituary.livestream ? '✅ Livestream<br>' : '❌ No Livestream<br>'}
+              ${programUrl ? '✅ Program PDF<br>' : '❌ No Program PDF<br>'}
+              ${galleryUrls.length > 0 ? '✅ Gallery (' + galleryUrls.length + ')' : '❌ No Gallery'}
             </span>
           </div>
           <div style="background: #fff; padding: 12px; border: 1px solid var(--line); border-radius: 6px; grid-column: 1 / -1;">
             <strong style="color: var(--gold); display: block; font-size: 0.8rem; text-transform: uppercase;">Contact Person</strong>
-            <span class="small">${safe(pendingObituary.contact)} · ${safe(pendingObituary.phone || 'No phone')} · ${safe(pendingObituary.email)}</span>
+            <span class="small">${safe(pendingObituary.family_email)} · ${safe(pendingObituary.family_phone || 'No phone')}</span>
           </div>
         `;
         document.getElementById("success-review").innerHTML = reviewHTML;
@@ -474,14 +430,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         document.getElementById("preview-section").style.display = "none";
         document.getElementById("success-section").style.display = "block";
-        document.getElementById("success-pin").textContent = pendingObituary.securePin;
-        document.getElementById("success-view-btn").href = `obituary.html?id=${encodeURIComponent(pendingObituary.id)}`;
-        document.getElementById("success-manage-btn").href = `dashboard.html?id=${encodeURIComponent(pendingObituary.id)}`;
+        document.getElementById("success-pin").textContent = pendingObituary.secure_pin;
+        document.getElementById("success-view-btn").href = `obituary.html?id=${newId}`;
+        document.getElementById("success-manage-btn").href = `dashboard.html?id=${newId}`;
         
         window.scrollTo({ top: 0, behavior: "smooth" });
         pendingObituary = null;
-        pendingProgramFile = null;
-      }, 2500);
+        pendingFiles = { photo: null, gallery: [], program: null };
+      }, 2000);
     });
   }
 
@@ -493,67 +449,21 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-/* ---------- 7b. FUNERAL PROGRAM VIEWER ---------- */
-const PDFJS_URL    = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
-const PDFJS_WORKER = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-
-function loadPdfJs() {
-  return new Promise((resolve, reject) => {
-    if (window.pdfjsLib) return resolve(window.pdfjsLib);
-    const script = document.createElement("script");
-    script.src = PDFJS_URL;
-    script.onload = () => { pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER; resolve(pdfjsLib); };
-    script.onerror = () => reject(new Error("PDF viewer could not load"));
-    document.head.appendChild(script);
-  });
-}
-
-async function getProgram(o) {
-  if (o.program === "idb") {
-    const file = await loadFile("program_" + o.id);
-    if (!file) throw new Error("Program file not found");
-    return { bytes: new Uint8Array(await file.arrayBuffer()), link: URL.createObjectURL(file) };
-  }
-  const raw = atob(o.program.split(",")[1]);
-  const bytes = new Uint8Array(raw.length);
-  for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
-  return { bytes: bytes, link: o.program };
-}
-
-async function showProgram(o) {
-  const box = $("#program-pages");
-  if (!box) return;
-  try {
-    const program = await getProgram(o);
-    $("#program-download").href = program.link;
-    const lib = await loadPdfJs();
-    const pdf = await lib.getDocument({ data: program.bytes }).promise;
-    box.innerHTML = "";
-    const width = box.clientWidth - 24;
-    for (let n = 1; n <= pdf.numPages; n++) {
-      const page = await pdf.getPage(n);
-      const size = page.getViewport({ scale: 1 });
-      const scale = (width / size.width) * (window.devicePixelRatio || 1);
-      const view = page.getViewport({ scale: scale });
-      const canvas = document.createElement("canvas");
-      canvas.width = view.width;
-      canvas.height = view.height;
-      box.appendChild(canvas);
-      await page.render({ canvasContext: canvas.getContext("2d"), viewport: view }).promise;
-    }
-  } catch (error) {
-    box.innerHTML = '<p class="small center">The program could not be shown here. Please use the download button below.</p>';
-  }
-}
-
 /* ---------- 8. SINGLE OBITUARY PAGE ---------- */
-function setupObituary() {
+async function setupObituary() {
   const id = new URLSearchParams(location.search).get("id");
-  const all = allObituaries();
-  const o = all.find((item) => item.id === id);
   const page = $("#obituary");
+  if (!page) return;
 
-  if (!o) {
+  page.innerHTML = "<div class='container section center'><p>Loading memorial...</p></div>";
+
+  const { data: o, error } = await db
+    .from('obituaries')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error || !o) {
     page.innerHTML = '<div class="container section center"><h1>Obituary not found</h1><p><a href="obituaries.html">← Back to all obituaries</a></p></div>';
     return;
   }
@@ -561,7 +471,7 @@ function setupObituary() {
   
   if ($('#og-title')) $('#og-title').setAttribute('content', `In Loving Memory of ${o.name}`);
   if ($('#og-desc')) $('#og-desc').setAttribute('content', `View the life story of ${o.name} and leave a tribute.`);
-  if ($('#og-image') && o.photo) $('#og-image').setAttribute('content', o.photo);
+  if ($('#og-image') && o.photo_url) $('#og-image').setAttribute('content', o.photo_url);
 
   function getEmbedUrl(url) {
     if (!url) return "";
@@ -575,14 +485,12 @@ function setupObituary() {
   const paragraphs = o.story.split(/\n+/).filter(Boolean).map((text) => `<p>${safe(text)}</p>`).join("");
   const minutes = Math.max(1, Math.round(o.story.split(/\s+/).length / 200));
   const diedLong = new Date(o.died).toLocaleDateString("en-KE", { day: "numeric", month: "long", year: "numeric" });
-  const others = all.filter((item) => item.id !== o.id).slice(0, 3);
-  const portrait = o.photo ? `<img src="${safe(o.photo)}" alt="Photo of ${safe(o.name)}">` : initials(o.name);
+  const portrait = o.photo_url ? `<img src="${safe(o.photo_url)}" alt="Photo of ${safe(o.name)}">` : initials(o.name);
 
-  // GALLERY HTML
-  const galleryHTML = (o.gallery && o.gallery.length > 0) ? `
+  const galleryHTML = (o.gallery_urls && o.gallery_urls.length > 0) ? `
       <h2 class="ornate">Photo Gallery</h2>
       <div class="gallery-grid">
-        ${o.gallery.map(img => `<a href="${img}" target="_blank"><img src="${img}" alt="Gallery Photo"></a>`).join("")}
+        ${o.gallery_urls.map(img => `<a href="${img}" target="_blank"><img src="${img}" alt="Gallery Photo"></a>`).join("")}
       </div>
     ` : "";
 
@@ -604,34 +512,30 @@ function setupObituary() {
         ${o.burial ? `<div class="detail"><b>Burial</b><p>${safe(o.burial)}</p>${burialMap}</div>` : ""}
       </div>` : "";
 
-  const program = o.program ? `
+  const program = o.program_url ? `
       <h2 class="ornate">Funeral program</h2>
-      <p class="small center">Scroll to read the program here, or download it as a PDF.</p>
-      <div class="program-viewer" id="program-pages"><p class="small center">Loading the program…</p></div>
-      <p class="center" style="margin-top:14px"><a class="btn gold" id="program-download" href="#" download="funeral-program.pdf">⬇ Download the program (PDF)</a></p>` : "";
+      <p class="small center">Download or view the program below.</p>
+      <p class="center" style="margin-top:14px"><a class="btn gold" href="${o.program_url}" target="_blank">⬇ Download the program (PDF)</a></p>` : "";
 
-  const hasMpesa = o.mpesaNumber;
-  const hasBank = o.bankName || o.bankAccount;
-  const hasFundTarget = o.fundTarget > 0;
+  const hasFundTarget = o.fund_target > 0;
 
-  const contribution = (hasMpesa || hasBank || hasFundTarget) ? `
+  const contribution = (o.mpesa_number || o.bank_name || hasFundTarget) ? `
       <div class="side-box" id="support-widget">
         <h3>Contribute to the family</h3>
         ${hasFundTarget ? `
-          <p class="small" style="margin-bottom: 10px;">${safe(o.fundReason || 'Help the family with funeral expenses.')}</p>
+          <p class="small" style="margin-bottom: 10px;">${safe(o.fund_reason || 'Help the family with funeral expenses.')}</p>
           <div class="fund-progress">
             <div class="fund-stats">
               <span><strong id="fund-raised">KSh 0</strong> raised</span>
-              <span>Target: KSh ${Number(o.fundTarget).toLocaleString()}</span>
+              <span>Target: KSh ${Number(o.fund_target).toLocaleString()}</span>
             </div>
             <div class="progress-bar"><div class="progress-fill" id="fund-bar" style="width: 0%"></div></div>
           </div>
           <button class="btn gold" id="btn-contribute" style="width:100%; margin-top: 16px;">Contribute via M-Pesa / Card</button>
         ` : `
-          ${hasMpesa ? `<p><b>M-Pesa</b><br>${safe(o.mpesaNumber)} ${o.mpesaName ? "<span class='small'>(" + safe(o.mpesaName) + ")</span>" : ""}</p>` : ""}
-          ${hasBank ? `<p><b>Bank</b><br>${safe(o.bankName || "")} · ${safe(o.bankAccount || "")}<br><span class="small">${safe(o.bankHolder || "")}</span></p>` : ""}
+          ${o.mpesa_number ? `<p><b>M-Pesa</b><br>${safe(o.mpesa_number)} ${o.mpesa_name ? "<span class='small'>(" + safe(o.mpesa_name) + ")</span>" : ""}</p>` : ""}
+          ${o.bank_name ? `<p><b>Bank</b><br>${safe(o.bank_name || "")} · ${safe(o.bank_account || "")}<br><span class="small">${safe(o.bank_holder || "")}</span></p>` : ""}
         `}
-        ${o.contributionContact ? `<p><b>Contact</b><br>${safe(o.contributionContact)}</p>` : ""}
       </div>` : "";
 
   page.innerHTML = `
@@ -668,7 +572,7 @@ function setupObituary() {
           ${program}
 
           <h2 class="ornate" id="comments-title">Tributes</h2>
-          <div id="tributes"></div>
+          <div id="tributes"><p class="small">Loading tributes...</p></div>
           <div class="panel">
             <h3>Leave a tribute</h3>
             <form id="tribute-form" novalidate>
@@ -694,7 +598,7 @@ function setupObituary() {
             <button class="btn outline share" id="copy" type="button">Copy link</button>
           </div>
           
-          ${load("my_memorials", []).includes(o.id) ? `
+          ${localStorage.getItem("my_memorials")?.includes(o.id) ? `
           <div class="side-box" style="background: #faf7f1; border-color: var(--gold);">
             <h3>Family Controls</h3>
             <p class="small" style="margin-bottom: 12px;">You created this page on this device.</p>
@@ -703,25 +607,20 @@ function setupObituary() {
           ` : ""}
         </aside>
       </div>
-    </section>
+    </section>`;
 
-    ${others.length ? `
-    <section class="section white">
-      <div class="container">
-        <h2 class="ornate" style="margin-top:0">Other lives remembered</h2>
-        <div class="grid" id="others" style="margin-top:24px">${others.map(cardHTML).join("")}</div>
-      </div>
-    </section>` : ""}`;
-
-  if (o.program) showProgram(o);
-  if (o.photo) $("#hero-bg").style.backgroundImage = 'url("' + o.photo + '")';
+  if (o.photo_url) $("#hero-bg").style.backgroundImage = 'url("' + o.photo_url + '")';
 
   const candleKey = "candles_" + o.id;
   function showCandles() {
-    const n = load(candleKey, 0);
+    const n = Number(localStorage.getItem(candleKey) || 0);
     $("#candle-count").textContent = n ? n + " candle(s) lit in memory" : "Be the first to light a candle";
   }
-  $("#candle").addEventListener("click", () => { save(candleKey, load(candleKey, 0) + 1); showCandles(); });
+  $("#candle").addEventListener("click", () => { 
+    const n = Number(localStorage.getItem(candleKey) || 0) + 1;
+    localStorage.setItem(candleKey, n);
+    showCandles(); 
+  });
   showCandles();
 
   $("#whatsapp").href = "https://wa.me/?text=" + encodeURIComponent("In loving memory of " + o.name + ": " + location.href);
@@ -732,36 +631,61 @@ function setupObituary() {
 
   $("#download-poster").addEventListener("click", () => generatePoster(o));
 
-  const tributeKey = "tributes_" + o.id;
-  function showTributes() {
-    const list = load(tributeKey, []);
+  async function showTributes() {
+    const { data: list, error } = await db
+      .from('tributes')
+      .select('*')
+      .eq('obituary_id', o.id)
+      .order('created_at', { ascending: false });
+
+    if (error) return;
+    
     $("#comments-title").textContent = "Tributes (" + list.length + ")";
     $("#tributes").innerHTML = list.length
       ? list.map((t) => `
           <div class="comment">
             <div class="c-avatar">${initials(t.name)}</div>
-            <div><b>${safe(t.name)}</b> <span class="small">· ${t.date}</span><p>${safe(t.message)}</p></div>
+            <div><b>${safe(t.name)}</b> <span class="small">· ${new Date(t.created_at).toLocaleDateString("en-KE")}</span><p>${safe(t.message)}</p></div>
           </div>`).join("")
       : '<p class="small">No tributes yet. Be the first to share a memory.</p>';
   }
-  $("#tribute-form").addEventListener("submit", (event) => {
+  
+  $("#tribute-form").addEventListener("submit", async (event) => {
     event.preventDefault();
     const name = $("#t-name");
     const message = $("#t-msg");
     if (!checkFields([name, message])) return;
-    const list = load(tributeKey, []);
-    list.unshift({ name: name.value.trim(), message: message.value.trim(), date: new Date().toLocaleDateString("en-KE") });
-    save(tributeKey, list);
-    name.value = "";
-    message.value = "";
-    showTributes();
+    
+    const btn = event.target.querySelector('button[type="submit"]');
+    btn.textContent = "Posting...";
+    btn.disabled = true;
+
+    const { error } = await db
+      .from('tributes')
+      .insert([{ 
+        obituary_id: o.id, 
+        name: name.value.trim(), 
+        message: message.value.trim() 
+      }]);
+
+    if (error) {
+      alert("Could not post tribute.");
+    } else {
+      name.value = "";
+      message.value = "";
+      await showTributes();
+    }
+    
+    btn.textContent = "Post tribute";
+    btn.disabled = false;
   });
+  
   showTributes();
 
   if (hasFundTarget) {
     const updateProgress = () => {
-      const raised = load(`raised_${o.id}`, 0);
-      const pct = Math.min((raised / o.fundTarget) * 100, 100);
+      const raised = Number(localStorage.getItem(`raised_${o.id}`) || 0);
+      const pct = Math.min((raised / o.fund_target) * 100, 100);
       if ($("#fund-raised")) $("#fund-raised").textContent = `KSh ${raised.toLocaleString()}`;
       if ($("#fund-bar")) $("#fund-bar").style.width = `${pct}%`;
     };
@@ -788,7 +712,7 @@ function setupObituary() {
         $("#pay-amt").textContent = Number(e.target.value || 0).toLocaleString();
       };
       
-      $("#contribute-form").onsubmit = (e) => {
+      $("#contribute-form").onsubmit = async (e) => {
         e.preventDefault();
         const amt = Number($("#c-amount").value);
         const name = $("#c-name").value.trim();
@@ -798,18 +722,16 @@ function setupObituary() {
         btn.textContent = 'Processing...';
         btn.disabled = true;
         
-        setTimeout(() => {
-          const current = load(`raised_${o.id}`, 0);
-          save(`raised_${o.id}`, current + amt);
+        await db.from('donations').insert([{
+          obituary_id: o.id,
+          donor_name: name || "Anonymous",
+          donor_phone: phone,
+          amount: amt
+        }]);
 
-          const donations = load(`donations_${o.id}`, []);
-          donations.unshift({
-            name: name || "Anonymous",
-            phone: phone,
-            amount: amt,
-            date: new Date().toLocaleDateString("en-KE")
-          });
-          save(`donations_${o.id}`, donations);
+        setTimeout(() => {
+          const current = Number(localStorage.getItem(`raised_${o.id}`) || 0);
+          localStorage.setItem(`raised_${o.id}`, current + amt);
           
           updateProgress();
           btn.innerHTML = `Pay KSh 0`;
@@ -823,8 +745,6 @@ function setupObituary() {
       };
     }
   }
-
-  if ($("#others")) cardEffects($("#others"));
 }
 
 /* ---------- 8b. ANNOUNCEMENT POSTER GENERATOR ---------- */
@@ -926,19 +846,19 @@ function generatePoster(o) {
     link.click();
   };
 
-  if (o.photo) {
+  if (o.photo_url) {
     const img = new Image();
     img.crossOrigin = "Anonymous";
     img.onload = () => drawTextAndFinish(img);
     img.onerror = () => drawTextAndFinish(null);
-    img.src = o.photo;
+    img.src = o.photo_url;
   } else {
     drawTextAndFinish(null);
   }
 }
 
 /* ---------- 8c. FAMILY DASHBOARD ---------- */
-function setupDashboard() {
+async function setupDashboard() {
   const loginGate = $("#login-gate");
   const dashboard = $("#dashboard-content");
   const idInput = $("#login-id");
@@ -949,66 +869,31 @@ function setupDashboard() {
   let currentId = null;
   let currentObituary = null;
 
-  loginBtn.addEventListener("click", () => {
+  loginBtn.addEventListener("click", async () => {
     const id = idInput.value.trim();
     const pin = pinInput.value.trim();
-    login(id, pin);
-  });
+    
+    const { data, error } = await db
+      .from('obituaries')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-  function login(id, pin = null) {
-    const obits = allObituaries();
-    const found = obits.find(o => o.id === id);
-
-    if (found) {
-      const myMemorials = load("my_memorials", []);
-      const isCreatorDevice = myMemorials.includes(id);
-
-      if (isCreatorDevice || pin === found.securePin) {
-        currentId = id;
-        currentObituary = found;
-        loginGate.style.display = "none";
-        dashboard.style.display = "block";
-        loadDashboardData();
-      } else {
-        errorMsg.style.display = "block";
-      }
+    if (data && (pin === data.secure_pin)) {
+      currentId = id;
+      currentObituary = data;
+      loginGate.style.display = "none";
+      dashboard.style.display = "block";
+      await loadDashboardData();
     } else {
       errorMsg.style.display = "block";
     }
-  }
+  });
 
   const urlId = new URLSearchParams(location.search).get("id");
   if (urlId) {
-    const myMemorials = load("my_memorials", []);
-    if (myMemorials.includes(urlId)) {
-      idInput.value = urlId;
-      login(urlId);
-    } else {
-      idInput.value = urlId;
-      loginGate.style.display = "block";
-    }
-  } else {
-    const myMemorials = load("my_memorials", []);
-    if (myMemorials.length > 0) {
-      const btnContainer = document.createElement("div");
-      btnContainer.style.marginTop = "20px";
-      btnContainer.innerHTML = "<p class='small'>Or select a page you recently created:</p>";
-      
-      myMemorials.forEach(id => {
-        const obit = allObituaries().find(o => o.id === id);
-        if (obit) {
-          const btn = document.createElement("button");
-          btn.className = "btn outline";
-          btn.style.display = "block";
-          btn.style.width = "100%";
-          btn.style.marginBottom = "8px";
-          btn.textContent = obit.name;
-          btn.onclick = () => login(id);
-          btnContainer.appendChild(btn);
-        }
-      });
-      loginGate.appendChild(btnContainer);
-    }
+    idInput.value = urlId;
+    loginGate.style.display = "block";
   }
 
   $("#logout-btn").addEventListener("click", () => {
@@ -1019,50 +904,55 @@ function setupDashboard() {
     errorMsg.style.display = "none";
   });
 
-  function loadDashboardData() {
+  async function loadDashboardData() {
     $("#dash-name").textContent = currentObituary.name;
     $("#dash-view-link").href = `obituary.html?id=${currentId}`;
     
-    const tributes = load(`tributes_${currentId}`, []);
+    const { data: tributes } = await db
+      .from('tributes')
+      .select('*')
+      .eq('obituary_id', currentId)
+      .order('created_at', { ascending: false });
+
     const tribBox = $("#dash-tributes");
-    
-    if (tributes.length === 0) {
+    if (!tributes || tributes.length === 0) {
       tribBox.innerHTML = '<p class="small">No tributes yet.</p>';
     } else {
-      tribBox.innerHTML = tributes.map((t, index) => `
+      tribBox.innerHTML = tributes.map((t) => `
         <div style="border-bottom: 1px solid var(--line); padding: 12px 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
           <div>
-            <b style="font-size: 0.9rem;">${safe(t.name)}</b> <span class="small">· ${t.date}</span>
+            <b style="font-size: 0.9rem;">${safe(t.name)}</b> <span class="small">· ${new Date(t.created_at).toLocaleDateString("en-KE")}</span>
             <p style="margin: 4px 0 0; font-size: 0.9rem;">${safe(t.message)}</p>
           </div>
-          <button class="btn outline" style="padding: 4px 8px; font-size: 0.75rem; color: #b3261e; border-color: #b3261e;" onclick="deleteTribute(${index})">Delete</button>
+          <button class="btn outline" style="padding: 4px 8px; font-size: 0.75rem; color: #b3261e; border-color: #b3261e;" onclick="deleteTribute('${t.id}')">Delete</button>
         </div>
       `).join("");
     }
 
-    const raised = load(`raised_${currentId}`, 0);
+    const raised = Number(localStorage.getItem(`raised_${currentId}`) || 0);
     $("#dash-raised").textContent = `KSh ${raised.toLocaleString()}`;
   }
 
-  window.deleteTribute = (index) => {
+  window.deleteTribute = async (tributeId) => {
     if (!confirm("Are you sure you want to hide this tribute?")) return;
-    const tributes = load(`tributes_${currentId}`, []);
-    tributes.splice(index, 1);
-    save(`tributes_${currentId}`, tributes);
-    loadDashboardData();
+    await db.from('tributes').delete().eq('id', tributeId);
+    await loadDashboardData();
   };
 
-  $("#download-csv").addEventListener("click", () => {
-    const donations = load(`donations_${currentId}`, []);
-    
-    if (donations.length === 0) {
+  $("#download-csv").addEventListener("click", async () => {
+    const { data: donations } = await db
+      .from('donations')
+      .select('*')
+      .eq('obituary_id', currentId);
+
+    if (!donations || donations.length === 0) {
       alert("No contributions recorded yet.");
       return;
     }
 
     let csv = "Date,Donor Name,Phone Number,Amount (KSh)\n";
     donations.forEach(d => {
-      csv += `"${d.date}","${d.name}","${d.phone}",${d.amount}\n`;
+      csv += `"${new Date(d.created_at).toLocaleDateString("en-KE")}","${d.donor_name}","${d.donor_phone}",${d.amount}\n`;
     });
 
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -1076,19 +966,16 @@ function setupDashboard() {
 
   const editForm = $("#request-edit-form");
   if (editForm) {
-    editForm.addEventListener("submit", (e) => {
+    editForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const msg = $("#edit-message").value.trim();
       if (!msg) return;
 
-      const requests = load("edit_requests", []);
-      requests.unshift({
-        obitId: currentId,
-        obitName: currentObituary.name,
-        message: msg,
-        date: new Date().toLocaleDateString("en-KE")
-      });
-      save("edit_requests", requests);
+      await db.from('edit_requests').insert([{
+        obituary_id: currentId,
+        obituary_name: currentObituary.name,
+        message: msg
+      }]);
 
       alert("Your request has been sent to the Admin. They will review and apply the changes shortly.");
       editForm.reset();
@@ -1097,7 +984,7 @@ function setupDashboard() {
 }
 
 /* ---------- 8d. ADMIN DASHBOARD ---------- */
-function setupAdmin() {
+async function setupAdmin() {
   const loginGate = $("#login-gate");
   const adminContent = $("#admin-content");
   const passInput = $("#admin-pass");
@@ -1132,15 +1019,15 @@ function setupAdmin() {
     checkAuth();
   });
 
-  function loadAdminData() {
-    const obits = load("saved_obituaries", []); 
+  async function loadAdminData() {
+    const { data: obits } = await db.from('obituaries').select('*').order('created_at', { ascending: false });
     let totalRaised = 0;
     let totalTributes = 0;
 
-    const requests = load("edit_requests", []);
+    const { data: requests } = await db.from('edit_requests').select('*');
     const alertBanner = $("#admin-alert");
     
-    if (requests.length > 0) {
+    if (requests && requests.length > 0) {
       $("#alert-text").textContent = `You have ${requests.length} pending edit request${requests.length > 1 ? 's' : ''}!`;
       alertBanner.style.display = "flex"; 
     } else {
@@ -1150,44 +1037,46 @@ function setupAdmin() {
     const tbody = $("#admin-table tbody");
     tbody.innerHTML = "";
 
-    obits.forEach(o => {
-      const raised = load(`raised_${o.id}`, 0);
-      const tribs = load(`tributes_${o.id}`, []).length;
-      totalRaised += raised;
-      totalTributes += tribs;
+    if (obits) {
+      for (const o of obits) {
+        const { count: tribs } = await db.from('tributes').select('*', { count: 'exact', head: true }).eq('obituary_id', o.id);
+        const raised = Number(localStorage.getItem(`raised_${o.id}`) || 0);
+        totalRaised += raised;
+        totalTributes += (tribs || 0);
 
-      tbody.innerHTML += `
-        <tr>
-          <td><strong>${safe(o.name)}</strong></td>
-          <td>${safe(o.county)}</td>
-          <td>KSh ${raised.toLocaleString()}</td>
-          <td>
-            <a href="obituary.html?id=${encodeURIComponent(o.id)}" class="btn outline" style="padding: 4px 8px; font-size: 0.75rem;" target="_blank">View</a>
-            <button class="btn gold" style="padding: 4px 8px; font-size: 0.75rem;" onclick="openEditModal('${o.id}')">Edit</button>
-            <button class="btn outline" style="padding: 4px 8px; font-size: 0.75rem; color: #b3261e; border-color: #b3261e;" onclick="adminDeleteObituary('${o.id}')">Delete</button>
-          </td>
-        </tr>
-      `;
-    });
+        tbody.innerHTML += `
+          <tr>
+            <td><strong>${safe(o.name)}</strong></td>
+            <td>${safe(o.county)}</td>
+            <td>KSh ${raised.toLocaleString()}</td>
+            <td>
+              <a href="obituary.html?id=${encodeURIComponent(o.id)}" class="btn outline" style="padding: 4px 8px; font-size: 0.75rem;" target="_blank">View</a>
+              <button class="btn gold" style="padding: 4px 8px; font-size: 0.75rem;" onclick="openEditModal('${o.id}')">Edit</button>
+              <button class="btn outline" style="padding: 4px 8px; font-size: 0.75rem; color: #b3261e; border-color: #b3261e;" onclick="adminDeleteObituary('${o.id}')">Delete</button>
+            </td>
+          </tr>
+        `;
+      }
+    }
 
-    $("#stat-obits").textContent = obits.length;
+    $("#stat-obits").textContent = obits ? obits.length : 0;
     $("#stat-tributes").textContent = totalTributes;
     $("#stat-raised").textContent = "KSh " + totalRaised.toLocaleString();
 
     const reqTbody = $("#requests-table tbody");
     reqTbody.innerHTML = "";
 
-    if (requests.length === 0) {
+    if (!requests || requests.length === 0) {
       reqTbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--soft);">No pending requests.</td></tr>';
     } else {
-      requests.forEach((req, index) => {
+      requests.forEach((req) => {
         reqTbody.innerHTML += `
           <tr>
-            <td>${req.date}</td>
-            <td><strong>${safe(req.obitName)}</strong></td>
+            <td>${new Date(req.created_at).toLocaleDateString("en-KE")}</td>
+            <td><strong>${safe(req.obituary_name)}</strong></td>
             <td>${safe(req.message)}</td>
             <td>
-              <button class="btn gold" style="padding: 4px 8px; font-size: 0.75rem;" onclick="openEditModal('${req.obitId}', ${index})">Edit & Resolve</button>
+              <button class="btn gold" style="padding: 4px 8px; font-size: 0.75rem;" onclick="openEditModal('${req.obituary_id}', '${req.id}')">Edit & Resolve</button>
             </td>
           </tr>
         `;
@@ -1195,20 +1084,16 @@ function setupAdmin() {
     }
   }
 
-  window.adminDeleteObituary = (id) => {
+  window.adminDeleteObituary = async (id) => {
     if (!confirm("⚠️ WARNING: This will permanently delete this obituary. Are you sure?")) return;
-    
-    const saved = load("saved_obituaries", []).filter(o => o.id !== id);
-    save("saved_obituaries", saved);
-    localStorage.removeItem(`tributes_${id}`);
-    localStorage.removeItem(`donations_${id}`);
+    await db.from('obituaries').delete().eq('id', id);
     localStorage.removeItem(`raised_${id}`);
     localStorage.removeItem(`candles_${id}`);
     loadAdminData();
   };
 
-  window.openEditModal = (id, reqIndex = null) => {
-    const obit = load("saved_obituaries", []).find(o => o.id === id);
+  window.openEditModal = async (id, reqId = null) => {
+    const { data: obit } = await db.from('obituaries').select('*').eq('id', id).single();
     if (!obit) return;
 
     $("#edit-id").value = id;
@@ -1219,7 +1104,7 @@ function setupAdmin() {
     $("#edit-service").value = obit.service || "";
     $("#edit-burial").value = obit.burial || "";
 
-    $("#admin-edit-form").dataset.reqIndex = reqIndex;
+    $("#admin-edit-form").dataset.reqId = reqId || "";
     $("#edit-obit-modal").hidden = false;
   };
 
@@ -1227,47 +1112,39 @@ function setupAdmin() {
     $("#edit-obit-modal").hidden = true;
   });
 
-  $("#admin-edit-form").addEventListener("submit", (e) => {
+  $("#admin-edit-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const id = $("#edit-id").value;
-    const saved = load("saved_obituaries", []);
-    const index = saved.findIndex(o => o.id === id);
     
-    if (index !== -1) {
-      saved[index].name = $("#edit-name").value.trim();
-      saved[index].born = $("#edit-born").value.slice(0, 4);
-      saved[index].died = $("#edit-died").value;
-      saved[index].age = Number(saved[index].died.slice(0, 4)) - Number(saved[index].born);
-      saved[index].story = $("#edit-story").value.trim();
-      saved[index].summary = saved[index].story.slice(0, 110) + (saved[index].story.length > 110 ? "…" : "");
-      saved[index].service = $("#edit-service").value.trim();
-      saved[index].burial = $("#edit-burial").value.trim();
+    await db.from('obituaries').update({
+      name: $("#edit-name").value.trim(),
+      born: $("#edit-born").value.slice(0, 4),
+      died: $("#edit-died").value,
+      story: $("#edit-story").value.trim(),
+      summary: $("#edit-story").value.trim().slice(0, 110) + "…",
+      service: $("#edit-service").value.trim(),
+      burial: $("#edit-burial").value.trim()
+    }).eq('id', id);
 
-      save("saved_obituaries", saved);
-
-      const reqIdx = e.target.dataset.reqIndex;
-      if (reqIdx !== "null" && reqIdx !== "") {
-        const requests = load("edit_requests", []);
-        requests.splice(Number(reqIdx), 1);
-        save("edit_requests", requests);
-      }
-
-      $("#edit-obit-modal").hidden = true;
-      loadAdminData();
-      alert("Changes applied successfully.");
+    const reqId = e.target.dataset.reqId;
+    if (reqId) {
+      await db.from('edit_requests').delete().eq('id', reqId);
     }
+
+    $("#edit-obit-modal").hidden = true;
+    loadAdminData();
+    alert("Changes applied successfully.");
   });
 
-  $("#download-master-report").addEventListener("click", () => {
-    const obits = load("saved_obituaries", []);
-    if (obits.length === 0) return alert("No obituaries on the platform yet.");
+  $("#download-master-report").addEventListener("click", async () => {
+    const { data: obits } = await db.from('obituaries').select('*');
+    if (!obits || obits.length === 0) return alert("No obituaries on the platform yet.");
 
-    let csv = "Name,County,Date Posted,Funds Raised,Tributes Count\n";
-    obits.forEach(o => {
-      const raised = load(`raised_${o.id}`, 0);
-      const tribs = load(`tributes_${o.id}`, []).length;
-      csv += `"${o.name}","${o.county}","${o.died}",${raised},${tribs}\n`;
-    });
+    let csv = "Name,County,Date Posted,Funds Raised\n";
+    for (const o of obits) {
+      const raised = Number(localStorage.getItem(`raised_${o.id}`) || 0);
+      csv += `"${o.name}","${o.county}","${new Date(o.created_at).toLocaleDateString("en-KE")}",${raised}\n`;
+    }
 
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
