@@ -230,8 +230,8 @@ function setupSubmit() {
 
   function updatePreview() {
     const name = get("name").value.trim() || "Full name";
-    const born = get("born").value.slice(0, 4) || "????";
-    const died = get("died").value.slice(0, 4) || "????";
+    const born = get("born").value.slice(0, 4) || "";
+    const died = get("died").value.slice(0, 4) || "";
     $("#pv-init").textContent = initials(name);
     $("#pv-name").textContent = name;
     $("#pv-dates").textContent = born + " – " + died;
