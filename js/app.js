@@ -243,8 +243,8 @@ function setupSubmit() {
 
   function updatePreview() {
     const name = get("name").value.trim() || "Full name";
-    const born = get("born").value.slice(0, 4) || "????";
-    const died = get("died").value.slice(0, 4) || "????";
+    const born = get("born").value.slice(0, 4) || "";
+    const died = get("died").value.slice(0, 4) || "";
     $("#pv-init").textContent = initials(name);
     $("#pv-name").textContent = name;
     $("#pv-dates").textContent = born + " – " + died;
@@ -469,6 +469,7 @@ async function setupObituary() {
   }
   document.title = o.name + " | Tribute Hub";
   
+  // Update Meta Tags for sharing (Works if a crawler executes JS, otherwise falls back to HTML)
   if ($('#og-title')) $('#og-title').setAttribute('content', `In Loving Memory of ${o.name}`);
   if ($('#og-desc')) $('#og-desc').setAttribute('content', `View the life story of ${o.name} and leave a tribute.`);
   if ($('#og-image') && o.photo_url) $('#og-image').setAttribute('content', o.photo_url);
@@ -701,8 +702,8 @@ async function setupObituary() {
           autoplay: 1,
           playsinline: 1,
           rel: 0,
-          modestbranding: 1
-          
+          modestbranding: 1,
+          origin: window.location.origin
         },
         events: {
           onReady: (event) => { try { event.target.playVideo(); } catch (e) {} }
@@ -738,7 +739,9 @@ async function setupObituary() {
     });
   }
 
-  $("#whatsapp").href = "https://wa.me/?text=" + encodeURIComponent("In loving memory of " + o.name + ": " + location.href);
+  // Update WhatsApp share link with a nice message and the actual link
+  $("#whatsapp").href = "https://wa.me/?text=" + encodeURIComponent(`In loving memory of ${o.name}. View the memorial and leave a tribute here: ${location.href}`);
+  
   $("#copy").addEventListener("click", async () => {
     try { await navigator.clipboard.writeText(location.href); $("#copy").textContent = "Link copied ✓"; }
     catch (e) { $("#copy").textContent = "Copy the address from your browser"; }
@@ -987,92 +990,167 @@ function generatePoster(o) {
   canvas.height = 1350;
   const ctx = canvas.getContext("2d");
 
-  ctx.fillStyle = "#f0ebe1";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  ctx.strokeStyle = "#bc7504";
-  ctx.lineWidth = 12;
-  ctx.strokeRect(30, 30, canvas.width - 60, canvas.height - 60);
-
-  ctx.fillStyle = "#4a566b";
-  ctx.font = "600 24px Arial, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("IN LOVING MEMORY", canvas.width / 2, 130);
 
   const drawTextAndFinish = (img) => {
-    let yOffset = 200;
     
+    // 1. Draw Background (Blurred Image or Fallback Gradient)
     if (img) {
-      const size = 400;
+      // Calculate scale for "cover" (fill canvas entirely without stretching)
+      const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
+      const x = (canvas.width / 2) - (img.width / 2) * scale;
+      const y = (canvas.height / 2) - (img.height / 2) * scale;
+      const w = img.width * scale;
+      const h = img.height * scale;
+
+      // Draw blurred image
+      ctx.filter = 'blur(24px)';
+      // Draw slightly larger (x-20, y-20, w+40, h+40) to prevent white edges from the blur
+      ctx.drawImage(img, x - 20, y - 20, w + 40, h + 40);
+      ctx.filter = 'none'; // Reset filter
+    } else {
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, "#1f2a3d");
+      gradient.addColorStop(1, "#0f1624");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // 2. Add Dark Gradient Overlay for text readability
+    const overlay = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    overlay.addColorStop(0, "rgba(15, 22, 36, 0.78)");
+    overlay.addColorStop(1, "rgba(15, 22, 36, 0.92)");
+    ctx.fillStyle = overlay;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 3. Header Text
+    ctx.fillStyle = "#f0c36b";
+    ctx.font = "600 20px Arial, sans-serif";
+    ctx.fillText("I N   L O V I N G   M E M O R Y", canvas.width / 2, 120);
+
+    // 4. Portrait in Golden Ring
+    if (img) {
+      const size = 320;
       const x = (canvas.width - size) / 2;
+      const y = 200;
+      
       ctx.save();
       ctx.beginPath();
-      ctx.arc(canvas.width / 2, 400, size / 2, 0, Math.PI * 2);
+      ctx.arc(canvas.width / 2, y + size / 2, size / 2, 0, Math.PI * 2);
       ctx.clip();
-      ctx.drawImage(img, x, 200, size, size);
+      ctx.drawImage(img, x, y, size, size);
       ctx.restore();
       
+      // Golden Ring border
       ctx.beginPath();
-      ctx.arc(canvas.width / 2, 400, size / 2 + 8, 0, Math.PI * 2);
-      ctx.strokeStyle = "#bc7504";
+      ctx.arc(canvas.width / 2, y + size / 2, size / 2 + 6, 0, Math.PI * 2);
+      ctx.strokeStyle = "#f0c36b";
       ctx.lineWidth = 8;
       ctx.stroke();
-      
-      yOffset = 680;
     } else {
+      // Fallback Initials
       ctx.beginPath();
-      ctx.arc(canvas.width / 2, 400, 200, 0, Math.PI * 2);
-      ctx.fillStyle = "#1f2a3d";
+      ctx.arc(canvas.width / 2, 360, 160, 0, Math.PI * 2);
+      ctx.fillStyle = "#2f4a6d";
       ctx.fill();
-      ctx.strokeStyle = "#bc7504";
+      ctx.strokeStyle = "#f0c36b";
       ctx.lineWidth = 8;
       ctx.stroke();
       
       ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 120px Georgia, serif";
-      ctx.fillText(initials(o.name), canvas.width / 2, 440);
-      
-      yOffset = 680;
+      ctx.font = "bold 110px Georgia, serif";
+      ctx.fillText(initials(o.name), canvas.width / 2, 395);
     }
 
-    ctx.fillStyle = "#1f2a3d";
-    ctx.font = "bold 72px Georgia, serif";
-    ctx.fillText(o.name, canvas.width / 2, yOffset);
-    yOffset += 70;
+    let yOffset = 620;
 
-    ctx.fillStyle = "#bc7504";
-    ctx.font = "600 32px Arial, sans-serif";
-    ctx.fillText(`Sunrise: ${o.born}  ✦  Sunset: ${o.died.slice(0, 4)}`, canvas.width / 2, yOffset);
+    // 5. Name
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "italic 64px 'Cormorant Garamond', Georgia, serif";
+    ctx.fillText(o.name, canvas.width / 2, yOffset);
     yOffset += 80;
 
-    const funeralInfo = o.service || o.burial;
-    if (funeralInfo) {
-      ctx.fillStyle = "#4a566b";
-      ctx.font = "400 28px Arial, sans-serif";
-      
-      const words = funeralInfo.split(" ");
-      let line = "";
-      let lines = [];
-      words.forEach(word => {
-        if (ctx.measureText(line + word).width > 800) {
-          lines.push(line);
-          line = word + " ";
-        } else {
-          line += word + " ";
-        }
-      });
-      lines.push(line);
+    // 6. Sunrise & Sunset
+    ctx.fillStyle = "#aab6c9";
+    ctx.font = "600 24px Arial, sans-serif";
+    const bornText = `SUNRISE ${o.born}`;
+    const diedText = `SUNSET ${o.died.slice(0, 4)}`;
+    const midX = canvas.width / 2;
+    
+    ctx.fillText(bornText, midX - 130, yOffset);
+    ctx.fillText(diedText, midX + 130, yOffset);
+    
+    // Star
+    ctx.fillStyle = "#f0c36b";
+    ctx.font = "28px Arial, sans-serif";
+    ctx.fillText("✦", midX, yOffset + 2);
+    
+    yOffset += 70;
 
-      lines.forEach(l => {
-        ctx.fillText(l.trim(), canvas.width / 2, yOffset);
+    // 7. Epitaph / Summary
+    ctx.fillStyle = "#e8edf5";
+    ctx.font = "italic 32px 'Cormorant Garamond', Georgia, serif";
+    const summary = o.summary || "";
+    const words = summary.split(" ");
+    let line = "";
+    let lines = [];
+    words.forEach(word => {
+      if (ctx.measureText(line + word).width > 800) {
+        lines.push(line);
+        line = word + " ";
+      } else {
+        line += word + " ";
+      }
+    });
+    lines.push(line);
+    lines.forEach(l => {
+      ctx.fillText(l.trim(), canvas.width / 2, yOffset);
+      yOffset += 40;
+    });
+
+    yOffset += 20;
+
+    // 8. Age & County
+    ctx.fillStyle = "#aab6c9";
+    ctx.font = "400 24px Arial, sans-serif";
+    ctx.fillText(`Age ${o.age} · ${o.county} County`, canvas.width / 2, yOffset);
+
+    yOffset += 60;
+
+    // 9. Funeral Details (Service & Burial)
+    if (o.service || o.burial) {
+      ctx.fillStyle = "#f0c36b";
+      ctx.font = "600 20px Arial, sans-serif";
+      ctx.fillText("F U N E R A L   D E T A I L S", canvas.width / 2, yOffset);
+      yOffset += 40;
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "400 22px Arial, sans-serif";
+
+      if (o.service) {
+        ctx.fillText("Memorial Service:", canvas.width / 2, yOffset);
+        yOffset += 30;
+        ctx.fillStyle = "#c9d2e0";
+        ctx.fillText(o.service, canvas.width / 2, yOffset);
         yOffset += 40;
-      });
+        ctx.fillStyle = "#ffffff";
+      }
+
+      if (o.burial) {
+        ctx.fillText("Burial:", canvas.width / 2, yOffset);
+        yOffset += 30;
+        ctx.fillStyle = "#c9d2e0";
+        ctx.fillText(o.burial, canvas.width / 2, yOffset);
+        yOffset += 40;
+      }
     }
 
+    // 10. Footer branding
     ctx.fillStyle = "#8892a6";
     ctx.font = "600 22px Arial, sans-serif";
-    ctx.fillText("TributeHub.com", canvas.width / 2, canvas.height - 100);
-    
+    ctx.fillText("TributeHub.com", canvas.width / 2, canvas.height - 80);
+
+    // Download
     const link = document.createElement("a");
     link.download = `${o.name.replace(/\s+/g, '-')}-Announcement.png`;
     link.href = canvas.toDataURL("image/png");
