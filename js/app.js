@@ -469,7 +469,7 @@ async function setupObituary() {
   }
   document.title = o.name + " | Tribute Hub";
   
-  // Update Meta Tags for sharing (Works if a crawler executes JS, otherwise falls back to HTML)
+  // Update Meta Tags for sharing
   if ($('#og-title')) $('#og-title').setAttribute('content', `In Loving Memory of ${o.name}`);
   if ($('#og-desc')) $('#og-desc').setAttribute('content', `View the life story of ${o.name} and leave a tribute.`);
   if ($('#og-image') && o.photo_url) $('#og-image').setAttribute('content', o.photo_url);
@@ -479,20 +479,15 @@ async function setupObituary() {
     if (!url) return "";
     const trimmed = url.trim();
 
-    // Already an embed URL
     if (trimmed.includes("youtube.com/embed/")) {
       return trimmed.split("embed/")[1].split(/[?&#]/)[0];
     }
-    // youtube.com/live/VIDEOID (live streams)
     const liveMatch = trimmed.match(/youtube\.com\/live\/([a-zA-Z0-9_-]{11})/);
     if (liveMatch) return liveMatch[1];
-    // youtu.be/VIDEOID
     const shortMatch = trimmed.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
     if (shortMatch) return shortMatch[1];
-    // watch?v=VIDEOID or &v=VIDEOID
     const watchMatch = trimmed.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
     if (watchMatch) return watchMatch[1];
-    // Legacy fallback
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|live\/)([^#\&\?]*).*/;
     const match = trimmed.match(regExp);
     if (match && match[2].length === 11) return match[2];
@@ -502,7 +497,6 @@ async function setupObituary() {
 
   const videoId = getVideoId(o.livestream);
 
-  /* Pre-load the YouTube IFrame API if this memorial has a livestream */
   if (videoId) {
     if (!window.YT && !document.querySelector('script[src*="youtube.com/iframe_api"]')) {
       const tag = document.createElement("script");
@@ -569,7 +563,6 @@ async function setupObituary() {
             <div class="progress-bar"><div class="progress-fill" id="fund-bar" style="width: 0%"></div></div>
           </div>
           
-          <!-- WhatsApp Style Ledger Summary -->
           <div class="ledger-summary" id="ledger-summary">
             <div>Pledged<br><strong id="sum-pledged">KSh 0</strong></div>
             <div>Paid<br><strong id="sum-paid">KSh 0</strong></div>
@@ -602,7 +595,6 @@ async function setupObituary() {
         <p class="hero-epitaph">${safe(o.summary)}</p>
         <p class="post-meta">Age ${o.age} · ${safe(o.county)} County · ${minutes} min read</p>
         
-        <!-- Side-by-Side Hero Buttons -->
         <div style="display: flex; gap: 12px; justify-content: center; margin-top: 20px; flex-wrap: wrap;">
           <button class="btn gold" id="candle">🔥 Light a candle</button>
           ${hasFundTarget ? `<button class="btn gold" id="btn-contribute-hero">🤍 Contribute</button>` : ""}
@@ -612,7 +604,22 @@ async function setupObituary() {
       </div>
     </header>
 
-    <section class="section">
+    <!-- ========================================================
+         MOVED TO TOP: CONTRIBUTION & SHARE BOXES
+         ======================================================== -->
+    <div class="container" style="margin-top: 30px; margin-bottom: 10px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; align-items: start;">
+        ${contribution}
+        <div class="side-box">
+          <h3>Share this tribute</h3>
+          <button class="btn gold share" id="download-poster" type="button">⬇ Download Announcement Poster</button>
+          <a class="btn outline share" id="whatsapp" target="_blank" rel="noopener">Share on WhatsApp</a>
+          <button class="btn outline share" id="copy" type="button">Copy link</button>
+        </div>
+      </div>
+    </div>
+
+    <section class="section" style="padding-top: 20px;">
       <div class="container post-layout">
         <article class="post">
           <h2 class="ornate" style="margin-top:0">Life story</h2>
@@ -636,19 +643,13 @@ async function setupObituary() {
           </div>
         </article>
 
+        <!-- SIDEBAR NOW ONLY HOLDS THE 'REMEMBERING' & 'FAMILY' BOXES -->
         <aside class="post-side">
           <div class="side-box">
             <h3>Remembering</h3>
             <p class="facts-list"><span>Passed on</span> ${diedLong}</p>
             <p class="facts-list"><span>Age</span> ${o.age} years</p>
             <p class="facts-list"><span>Home county</span> ${safe(o.county)}</p>
-          </div>
-          ${contribution}
-          <div class="side-box">
-            <h3>Share this tribute</h3>
-            <button class="btn gold share" id="download-poster" type="button">⬇ Download Announcement Poster</button>
-            <a class="btn outline share" id="whatsapp" target="_blank" rel="noopener">Share on WhatsApp</a>
-            <button class="btn outline share" id="copy" type="button">Copy link</button>
           </div>
           
           ${localStorage.getItem("my_memorials")?.includes(o.id) ? `
@@ -686,7 +687,6 @@ async function setupObituary() {
     const wrap = $("#video-wrap");
     if (!wrap) return;
 
-    // Swap thumbnail for a clean player holder (keeps the 16:9 wrap)
     wrap.innerHTML = `
       <div class="youtube-player-holder">
         <div id="youtube-player"></div>
@@ -711,13 +711,11 @@ async function setupObituary() {
       });
     };
 
-    // API already loaded? Build immediately.
     if (window.YT && typeof window.YT.Player === "function") {
       buildPlayer();
       return;
     }
 
-    // Otherwise wait for the API to finish loading (poll up to 10s)
     let waited = 0;
     const poll = setInterval(() => {
       waited += 100;
@@ -731,7 +729,6 @@ async function setupObituary() {
     }, 100);
   };
 
-  // Wire up the play button once the livestream section is in the DOM
   const playBtn = document.querySelector(".video-play-btn");
   if (playBtn) {
     playBtn.addEventListener("click", function () {
@@ -739,7 +736,6 @@ async function setupObituary() {
     });
   }
 
-  // Update WhatsApp share link with a nice message and the actual link
   $("#whatsapp").href = "https://wa.me/?text=" + encodeURIComponent(`In loving memory of ${o.name}. View the memorial and leave a tribute here: ${location.href}`);
   
   $("#copy").addEventListener("click", async () => {
@@ -770,7 +766,6 @@ async function setupObituary() {
               <b>${safe(t.name)}</b> <span class="small">· ${new Date(t.created_at).toLocaleDateString("en-KE")}</span>
               <p>${safe(t.message)}</p>
               
-              <!-- EMOJI BAR -->
               <div class="tribute-reactions">
                 <button onclick="reactToTribute('${t.id}', 'heart')">❤️ ${r.heart || 0}</button>
                 <button onclick="reactToTribute('${t.id}', 'pray')">🙏 ${r.pray || 0}</button>
@@ -891,7 +886,6 @@ async function setupObituary() {
     const submitBtn   = $("#submit-contribution");
     let currentAction = "pay";
 
-    // Update submit button label based on action + amount
     const updateSubmitLabel = () => {
       const amt = Number(amountInput.value || 0);
       const formatted = amt.toLocaleString();
@@ -902,7 +896,6 @@ async function setupObituary() {
       }
     };
 
-    // Preset amount buttons
     document.querySelectorAll('.btn-amount').forEach(btn => {
       btn.onclick = () => {
         document.querySelectorAll('.btn-amount').forEach(b => b.classList.remove('active'));
@@ -912,13 +905,11 @@ async function setupObituary() {
       };
     });
 
-    // Custom amount input
     amountInput.oninput = () => {
       document.querySelectorAll('.btn-amount').forEach(b => b.classList.remove('active'));
       updateSubmitLabel();
     };
 
-    // Pay vs Pledge toggle
     document.querySelectorAll('.action-btn').forEach(btn => {
       btn.onclick = () => {
         document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('active'));
@@ -994,20 +985,16 @@ function generatePoster(o) {
 
   const drawTextAndFinish = (img) => {
     
-    // 1. Draw Background (Blurred Image or Fallback Gradient)
     if (img) {
-      // Calculate scale for "cover" (fill canvas entirely without stretching)
       const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
       const x = (canvas.width / 2) - (img.width / 2) * scale;
       const y = (canvas.height / 2) - (img.height / 2) * scale;
       const w = img.width * scale;
       const h = img.height * scale;
 
-      // Draw blurred image
       ctx.filter = 'blur(24px)';
-      // Draw slightly larger (x-20, y-20, w+40, h+40) to prevent white edges from the blur
       ctx.drawImage(img, x - 20, y - 20, w + 40, h + 40);
-      ctx.filter = 'none'; // Reset filter
+      ctx.filter = 'none';
     } else {
       const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
       gradient.addColorStop(0, "#1f2a3d");
@@ -1016,19 +1003,16 @@ function generatePoster(o) {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    // 2. Add Dark Gradient Overlay for text readability
     const overlay = ctx.createLinearGradient(0, 0, 0, canvas.height);
     overlay.addColorStop(0, "rgba(15, 22, 36, 0.78)");
     overlay.addColorStop(1, "rgba(15, 22, 36, 0.92)");
     ctx.fillStyle = overlay;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 3. Header Text
     ctx.fillStyle = "#f0c36b";
     ctx.font = "600 20px Arial, sans-serif";
     ctx.fillText("I N   L O V I N G   M E M O R Y", canvas.width / 2, 120);
 
-    // 4. Portrait in Golden Ring
     if (img) {
       const size = 320;
       const x = (canvas.width - size) / 2;
@@ -1041,14 +1025,12 @@ function generatePoster(o) {
       ctx.drawImage(img, x, y, size, size);
       ctx.restore();
       
-      // Golden Ring border
       ctx.beginPath();
       ctx.arc(canvas.width / 2, y + size / 2, size / 2 + 6, 0, Math.PI * 2);
       ctx.strokeStyle = "#f0c36b";
       ctx.lineWidth = 8;
       ctx.stroke();
     } else {
-      // Fallback Initials
       ctx.beginPath();
       ctx.arc(canvas.width / 2, 360, 160, 0, Math.PI * 2);
       ctx.fillStyle = "#2f4a6d";
@@ -1064,13 +1046,11 @@ function generatePoster(o) {
 
     let yOffset = 620;
 
-    // 5. Name
     ctx.fillStyle = "#ffffff";
     ctx.font = "italic 64px 'Cormorant Garamond', Georgia, serif";
     ctx.fillText(o.name, canvas.width / 2, yOffset);
     yOffset += 80;
 
-    // 6. Sunrise & Sunset
     ctx.fillStyle = "#aab6c9";
     ctx.font = "600 24px Arial, sans-serif";
     const bornText = `SUNRISE ${o.born}`;
@@ -1080,14 +1060,12 @@ function generatePoster(o) {
     ctx.fillText(bornText, midX - 130, yOffset);
     ctx.fillText(diedText, midX + 130, yOffset);
     
-    // Star
     ctx.fillStyle = "#f0c36b";
     ctx.font = "28px Arial, sans-serif";
     ctx.fillText("✦", midX, yOffset + 2);
     
     yOffset += 70;
 
-    // 7. Epitaph / Summary
     ctx.fillStyle = "#e8edf5";
     ctx.font = "italic 32px 'Cormorant Garamond', Georgia, serif";
     const summary = o.summary || "";
@@ -1110,14 +1088,12 @@ function generatePoster(o) {
 
     yOffset += 20;
 
-    // 8. Age & County
     ctx.fillStyle = "#aab6c9";
     ctx.font = "400 24px Arial, sans-serif";
     ctx.fillText(`Age ${o.age} · ${o.county} County`, canvas.width / 2, yOffset);
 
     yOffset += 60;
 
-    // 9. Funeral Details (Service & Burial)
     if (o.service || o.burial) {
       ctx.fillStyle = "#f0c36b";
       ctx.font = "600 20px Arial, sans-serif";
@@ -1145,12 +1121,10 @@ function generatePoster(o) {
       }
     }
 
-    // 10. Footer branding
     ctx.fillStyle = "#8892a6";
     ctx.font = "600 22px Arial, sans-serif";
     ctx.fillText("TributeHub.com", canvas.width / 2, canvas.height - 80);
 
-    // Download
     const link = document.createElement("a");
     link.download = `${o.name.replace(/\s+/g, '-')}-Announcement.png`;
     link.href = canvas.toDataURL("image/png");
@@ -1240,7 +1214,6 @@ async function setupDashboard() {
       `).join("");
     }
 
-    // Dashboard Ledger: Now uses actual PAID amounts from database
     const { data: donations } = await db.from('donations').select('*').eq('obituary_id', currentId);
     let totalPaid = 0;
     if (donations) donations.forEach(d => totalPaid += (d.paid_amount || 0));
@@ -1265,7 +1238,6 @@ async function setupDashboard() {
       return;
     }
 
-    // CSV now includes Pledged vs Paid
     let csv = "Date,Donor Name,Phone,Pledged (KSh),Paid (KSh),Status\n";
     donations.forEach(d => {
       csv += `"${new Date(d.created_at).toLocaleDateString("en-KE")}","${d.donor_name}","${d.donor_phone}",${d.pledge_amount || 0},${d.paid_amount || 0},"${d.status}"\n`;
@@ -1357,7 +1329,6 @@ async function setupAdmin() {
       for (const o of obits) {
         const { count: tribs } = await db.from('tributes').select('*', { count: 'exact', head: true }).eq('obituary_id', o.id);
         
-        // Admin table now uses PAID amounts from database
         const { data: donations } = await db.from('donations').select('paid_amount').eq('obituary_id', o.id);
         let raised = 0;
         if (donations) donations.forEach(d => raised += (d.paid_amount || 0));
