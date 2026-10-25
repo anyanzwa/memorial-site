@@ -6,13 +6,10 @@
   <link rel="icon" type="image/jpeg" href="images/Title image.jpeg">
   <title>Obituary | Tribute Hub</title>
   
-  <!-- SHARE LINK TAGS (These must be static for WhatsApp/Facebook to read them) -->
+  <!-- SHARE LINK TAGS -->
   <meta property="og:title" id="og-title" content="In Loving Memory | Tribute Hub">
   <meta property="og:description" id="og-desc" content="View the life story, funeral details, and leave a tribute.">
-  
-  <!-- REPLACE THIS URL WITH A HIGH-QUALITY DEFAULT BANNER FROM YOUR SUPABASE STORAGE -->
   <meta property="og:image" id="og-image" content="https://fbyudpgnftqsjdavonrk.supabase.co/storage/v1/object/public/memorial-assets/default-share-banner.jpg">
-  
   <meta property="og:url" id="og-url" content="https://tributehub.com/obituary.html">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Tribute Hub">
@@ -42,20 +39,14 @@
   </div>
 </header>
 
-<!-- =====================================================================
-     THE MEMORIAL PAGE 
-     app.js reads the ?id= in the URL and injects the entire page here.
-     ===================================================================== -->
+<!-- THE MEMORIAL PAGE -->
 <main id="obituary">
   <div class="container section center">
     <p>Loading memorial...</p>
   </div>
 </main>
 
-<!-- =====================================================================
-     CONTRIBUTION MODAL
-     app.js shows/hides this and handles the Pledge vs Pay logic.
-     ===================================================================== -->
+<!-- CONTRIBUTION MODAL -->
 <div id="contribute-modal" class="modal-overlay" hidden>
   <div class="modal-content contribution-modal">
     <button class="modal-close" id="close-modal">✕</button>
@@ -64,7 +55,7 @@
     
     <form id="contribute-form">
       <!-- Amount Section -->
-      <div class="form-group">
+      <div class="form-group" id="form-amount-group">
         <label>Amount</label>
         <div class="amount-presets">
           <button type="button" class="btn-amount" data-amt="500">KSh 500</button>
@@ -78,7 +69,7 @@
       </div>
       
       <!-- Action Section (Pay vs Pledge Toggle) -->
-      <div class="form-group">
+      <div class="form-group" id="form-action-group">
         <label>Payment Option</label>
         <div class="action-toggle" id="action-toggle">
           <button type="button" class="action-btn active" data-action="pay">
@@ -94,12 +85,12 @@
       </div>
 
       <!-- Donor Details -->
-      <div class="form-group">
+      <div class="form-group" id="form-name-group">
         <label>Your Name</label>
         <input id="c-name" required maxlength="50" placeholder="e.g. John Doe">
       </div>
       
-      <div class="form-group">
+      <div class="form-group" id="form-phone-group">
         <label>Phone Number</label>
         <input id="c-phone" type="tel" required placeholder="07XX XXX XXX">
       </div>
@@ -107,6 +98,24 @@
       <button class="btn gold" type="submit" id="submit-contribution">
         Pay KSh <span id="pay-amt">0</span> Now
       </button>
+
+      <!-- WAITING STATE (Hidden by default) -->
+      <div id="mpesa-waiting" style="display: none; text-align: center; padding: 20px;">
+        <div style="border: 4px solid #f3f3f3; border-top: 4px solid var(--gold); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px;"></div>
+        <p style="font-weight: bold; color: var(--ink);">Waiting for your M-Pesa PIN...</p>
+        <p class="small">Please check your phone and enter your PIN to complete the payment.</p>
+        <p class="small" style="margin-top: 15px; color: #b3261e; cursor: pointer; text-decoration: underline;" id="show-manual-btn">
+          Didn't get the prompt or it failed? Click here to enter your M-Pesa code.
+        </p>
+      </div>
+
+      <!-- MANUAL FALLBACK STATE (Hidden by default) -->
+      <div id="mpesa-manual" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--line);">
+        <h4 style="margin-bottom: 10px; font-size: 0.95rem;">Already paid but confirmation is delayed?</h4>
+        <p class="small" style="margin-bottom: 10px;">Enter the M-Pesa receipt code from your SMS (e.g., QK12AB34CD).</p>
+        <input id="manual-receipt" placeholder="Enter M-Pesa Code" style="margin-bottom: 10px;">
+        <button type="button" class="btn outline" id="submit-manual-btn" style="width: 100%;">Verify Payment</button>
+      </div>
     </form>
   </div>
 </div>
@@ -144,14 +153,12 @@
     <div class="copy">
       © <span id="year"></span> Tribute Hub. All rights reserved.
       
-      <!-- Discreet Admin Link -->
       <span style="margin-left: 10px; font-size: 0.75rem; opacity: 0.5;">
         | <a href="admin.html" style="color: inherit; text-decoration: underline;">Staff Login</a>
       </span>
       
       <br><br>
       
-      <!-- CLICKABLE LOGO -->
       <span class="powered-by" style="display: inline-flex; align-items: center; justify-content: center; gap: 10px; margin-top: 16px;">
         POWERED BY:
         <a href="https://www.ndandaevents.com/" target="_blank" rel="noopener noreferrer" style="display: inline-block;">

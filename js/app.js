@@ -235,6 +235,7 @@ function checkFields(fields) {
 /* ---------- 7. SUBMIT PAGE ---------- */
 let pendingObituary = null;
 let pendingFiles = { photo: null, gallery: [], program: null };
+let activeReceiptNumber = "N/A";
 
 function setupSubmit() {
   const form = $("#submit-form");
@@ -357,88 +358,233 @@ function setupSubmit() {
   document.getElementById("proceed-to-payment").addEventListener("click", () => {
     $("#publish-modal").hidden = false;
     document.body.style.overflow = 'hidden';
+    
+    const payPhoneInput = document.getElementById("pay-phone");
+    if (payPhoneInput && pendingObituary && pendingObituary.family_phone) {
+      payPhoneInput.value = pendingObituary.family_phone;
+    }
   });
 }
 
+/* ---------- 7b. PUBLISH & PAY (submit page only) ---------- */
 document.addEventListener("DOMContentLoaded", () => {
   const payBtn = $("#pay-publish-btn");
   const closeBtn = $("#close-publish-modal");
 
-  if (payBtn) {
-    payBtn.addEventListener("click", async () => {
-      if (!pendingObituary) return;
-      payBtn.textContent = 'Processing Payment...';
-      payBtn.disabled = true;
+  if (!payBtn) return;
 
-      setTimeout(async () => {
-        payBtn.textContent = 'Uploading Files...';
-        
-        const photoUrl = await uploadFile(pendingFiles.photo, 'photos');
-        
-        let galleryUrls = [];
-        for (const file of pendingFiles.gallery) {
-          const url = await uploadFile(file, 'gallery');
-          if (url) galleryUrls.push(url);
+  const waitingBox = $("#post-waiting");
+  const manualBox = $("#post-manual");
+  const waitingDefaultHTML = waitingBox ? waitingBox.innerHTML : "";
+
+  window.resetPublishUI = () => {
+    payBtn.style.display = 'block';
+    payBtn.textContent = 'Pay KSh 3,000 via M-Pesa';
+    payBtn.disabled = false;
+    if (waitingBox) {
+      waitingBox.innerHTML = waitingDefaultHTML;
+      waitingBox.style.display = 'none';
+    }
+    if (manualBox) manualBox.style.display = 'none';
+
+    const showManual = $("#show-post-manual-btn");
+    if (showManual) showManual.onclick = openManualBox;
+  };
+
+  function openManualBox() {
+    if (waitingBox) waitingBox.style.display = 'none';
+    if (manualBox) manualBox.style.display = 'block';
+  }
+
+  payBtn.addEventListener("click", async () => {
+    if (!pendingObituary) return;
+
+    const payPhoneInput = document.getElementById("pay-phone");
+    const phone = payPhoneInput ? payPhoneInput.value.trim() : "";
+
+    if (!phone) {
+      alert("Please enter the M-Pesa phone number to receive the prompt.");
+      if (payPhoneInput) payPhoneInput.focus();
+      return;
+    }
+
+    payBtn.style.display = 'none';
+    if (waitingBox) waitingBox.style.display = 'block';
+
+    try {
+      const { data, error } = await db.functions.invoke('mpesa-stk-push', {
+        body: {
+          phone: phone,
+          amount: 3000,
+          obituaryId: null,
+          accountRef: 'Posting Fee',
+          donorName: pendingObituary.name
         }
-        
-        const programUrl = await uploadFile(pendingFiles.program, 'programs');
+      });
 
-        pendingObituary.photo_url = photoUrl;
-        pendingObituary.gallery_urls = galleryUrls;
-        pendingObituary.program_url = programUrl;
-
-        const { data, error } = await db
-          .from('obituaries')
-          .insert([pendingObituary])
-          .select();
-
-        if (error) {
-          alert("Database Error: " + error.message);
-          payBtn.textContent = 'Pay via M-Pesa';
-          payBtn.disabled = false;
-          return;
+      if (error) {
+        let errorMsg = "Payment request failed. Please check your phone number.";
+        if (error.context) {
+          try {
+            const errJson = await error.context.json();
+            if (errJson && errJson.error) errorMsg = errJson.error;
+          } catch (e) {}
         }
+        throw new Error(errorMsg);
+      }
 
-        const newId = data[0].id;
+      if (data && data.CheckoutRequestID) {
+        const checkoutId = data.CheckoutRequestID;
+        let secondsWaited = 0;
 
-        const reviewHTML = `
-          <div style="background: #fff; padding: 12px; border: 1px solid var(--line); border-radius: 6px;">
-            <strong style="color: var(--gold); display: block; font-size: 0.8rem; text-transform: uppercase;">Deceased Details</strong>
-            <span style="font-size: 1.1rem; font-weight: 700;">${safe(pendingObituary.name)}</span><br>
-            <span class="small">${pendingObituary.born} – ${pendingObituary.died} | ${safe(pendingObituary.county)} County</span>
-          </div>
-          <div style="background: #fff; padding: 12px; border: 1px solid var(--line); border-radius: 6px;">
-            <strong style="color: var(--gold); display: block; font-size: 0.8rem; text-transform: uppercase;">Added Features</strong>
-            <span class="small">
-              ${pendingObituary.fund_target > 0 ? '✅ Fundraising<br>' : '❌ No Fundraising<br>'}
-              ${pendingObituary.livestream ? '✅ Livestream<br>' : '❌ No Livestream<br>'}
-              ${programUrl ? '✅ Program PDF<br>' : '❌ No Program PDF<br>'}
-              ${galleryUrls.length > 0 ? '✅ Gallery (' + galleryUrls.length + ')' : '❌ No Gallery'}
-            </span>
-          </div>
-          <div style="background: #fff; padding: 12px; border: 1px solid var(--line); border-radius: 6px; grid-column: 1 / -1;">
-            <strong style="color: var(--gold); display: block; font-size: 0.8rem; text-transform: uppercase;">Contact Person</strong>
-            <span class="small">${safe(pendingObituary.family_email)} · ${safe(pendingObituary.family_phone || 'No phone')}</span>
-          </div>
-        `;
-        document.getElementById("success-review").innerHTML = reviewHTML;
+        const pollInterval = setInterval(async () => {
+          secondsWaited += 3;
+          const { data: txn } = await db
+            .from('mpesa_transactions')
+            .select('status, mpesa_receipt')
+            .eq('checkout_request_id', checkoutId)
+            .maybeSingle();
 
-        $("#publish-modal").hidden = true;
-        document.body.style.overflow = '';
-        payBtn.textContent = 'Pay via M-Pesa';
-        payBtn.disabled = false;
+          if (txn && txn.status === 'paid') {
+            clearInterval(pollInterval);
+            activeReceiptNumber = txn.mpesa_receipt || "N/A"; 
+            await finalizePublishing();
+          } else if (txn && txn.status === 'failed') {
+            clearInterval(pollInterval);
+            alert("Payment failed or was cancelled. Please try again.");
+            resetPublishUI();
+          } else if (secondsWaited >= 60) {
+            clearInterval(pollInterval);
+            openManualBox();
+          }
+        }, 3000);
+      } else {
+        alert(`Payment request failed: ${(data && data.error) || 'Please check your details and try again.'}`);
+        resetPublishUI();
+      }
+    } catch (err) {
+      console.error(err);
+      alert(`Error initiating payment: ${err.message}`);
+      resetPublishUI();
+    }
+  });
 
-        document.getElementById("preview-section").style.display = "none";
-        document.getElementById("success-section").style.display = "block";
-        document.getElementById("success-pin").textContent = pendingObituary.secure_pin;
-        document.getElementById("success-view-btn").href = `obituary.html?id=${newId}`;
-        document.getElementById("success-manage-btn").href = `dashboard.html?id=${newId}`;
-        
-        window.scrollTo({ top: 0, behavior: "smooth" });
-        pendingObituary = null;
-        pendingFiles = { photo: null, gallery: [], program: null };
-      }, 2000);
-    });
+  const showManualBtn = $("#show-post-manual-btn");
+  if (showManualBtn) showManualBtn.onclick = openManualBox;
+
+  const submitManualBtn = $("#submit-post-manual-btn");
+  if (submitManualBtn) {
+    submitManualBtn.onclick = async () => {
+      const receiptInput = $("#post-manual-receipt");
+      const receipt = receiptInput ? receiptInput.value.trim().toUpperCase() : "";
+      if (!receipt || receipt.length < 10) return alert("Please enter a valid M-Pesa receipt code.");
+
+      submitManualBtn.textContent = 'Verifying...';
+      submitManualBtn.disabled = true;
+
+      const phoneInput = document.getElementById("pay-phone");
+      const phone = phoneInput ? phoneInput.value.trim() : "";
+
+      await db.from('mpesa_transactions').insert([{
+        obituary_id: null,
+        phone_number: phone,
+        amount: 3000,
+        mpesa_receipt: receipt,
+        status: 'manual_review',
+        is_manual: true
+      }]);
+
+      alert("Thank you! Your receipt has been submitted. The administrator will verify it shortly and publish your page.");
+      submitManualBtn.textContent = 'Submit receipt';
+      submitManualBtn.disabled = false;
+      resetPublishUI();
+      $("#publish-modal").hidden = true;
+      document.body.style.overflow = '';
+
+      window.location.href = "index.html";
+    };
+  }
+
+  async function finalizePublishing() {
+    if (waitingBox) {
+      waitingBox.innerHTML = `<p style="font-weight: bold; color: #1d5a2d;">✅ Payment Received! Publishing...</p>`;
+    }
+
+    const photoUrl = await uploadFile(pendingFiles.photo, 'photos');
+
+    let galleryUrls = [];
+    for (const file of pendingFiles.gallery) {
+      const url = await uploadFile(file, 'gallery');
+      if (url) galleryUrls.push(url);
+    }
+
+    const programUrl = await uploadFile(pendingFiles.program, 'programs');
+
+    pendingObituary.photo_url = photoUrl;
+    pendingObituary.gallery_urls = galleryUrls;
+    pendingObituary.program_url = programUrl;
+
+    const { data, error } = await db
+      .from('obituaries')
+      .insert([pendingObituary])
+      .select();
+
+    if (error) {
+      alert("Database Error: " + error.message);
+      resetPublishUI();
+      return;
+    }
+
+    const newId = data[0].id;
+
+    const reviewHTML = `
+      <div style="background: #fff; padding: 12px; border: 1px solid var(--line); border-radius: 6px;">
+        <strong style="color: var(--gold); display: block; font-size: 0.8rem; text-transform: uppercase;">Deceased Details</strong>
+        <span style="font-size: 1.1rem; font-weight: 700;">${safe(pendingObituary.name)}</span><br>
+        <span class="small">${pendingObituary.born} – ${pendingObituary.died} | ${safe(pendingObituary.county)} County</span>
+      </div>
+      <div style="background: #fff; padding: 12px; border: 1px solid var(--line); border-radius: 6px;">
+        <strong style="color: var(--gold); display: block; font-size: 0.8rem; text-transform: uppercase;">Added Features</strong>
+        <span class="small">
+          ${pendingObituary.fund_target > 0 ? '✅ Fundraising<br>' : '❌ No Fundraising<br>'}
+          ${pendingObituary.livestream ? '✅ Livestream<br>' : '❌ No Livestream<br>'}
+          ${programUrl ? '✅ Program PDF<br>' : '❌ No Program PDF<br>'}
+          ${galleryUrls.length > 0 ? '✅ Gallery (' + galleryUrls.length + ')' : '❌ No Gallery'}
+        </span>
+      </div>
+      <div style="background: #fff; padding: 12px; border: 1px solid var(--line); border-radius: 6px; grid-column: 1 / -1;">
+        <strong style="color: var(--gold); display: block; font-size: 0.8rem; text-transform: uppercase;">Contact Person</strong>
+        <span class="small">${safe(pendingObituary.family_email)} · ${safe(pendingObituary.family_phone || 'No phone')}</span>
+      </div>
+    `;
+    document.getElementById("success-review").innerHTML = reviewHTML;
+
+    const receiptEl = document.getElementById("success-receipt-num");
+    if (receiptEl) receiptEl.textContent = activeReceiptNumber;
+    
+    const dlBtn = document.getElementById("download-receipt-btn");
+    if (dlBtn) {
+      dlBtn.onclick = () => generateReceipt(
+        activeReceiptNumber, 
+        3000, 
+        "Obituary Publication Fee", 
+        pendingObituary.family_email, 
+        pendingObituary.name
+      );
+    }
+
+    $("#publish-modal").hidden = true;
+    document.body.style.overflow = '';
+
+    document.getElementById("preview-section").style.display = "none";
+    document.getElementById("success-section").style.display = "block";
+    document.getElementById("success-pin").textContent = pendingObituary.secure_pin;
+    document.getElementById("success-view-btn").href = `obituary.html?id=${newId}`;
+    document.getElementById("success-manage-btn").href = `dashboard.html?id=${newId}`;
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    pendingObituary = null;
+    pendingFiles = { photo: null, gallery: [], program: null };
   }
 
   if (closeBtn) {
@@ -448,6 +594,107 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+/* ---------- 7c. RECEIPT GENERATOR ---------- */
+function generateReceipt(receiptNum, amount, purpose, payerName, deceasedName = "") {
+  const canvas = document.createElement("canvas");
+  canvas.width = 800;
+  canvas.height = 1000;
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "#bc7504";
+  ctx.fillRect(0, 0, canvas.width, 20);
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#1f2a3d";
+  ctx.font = "bold 36px Arial, sans-serif";
+  ctx.fillText("TRIBUTE HUB", canvas.width / 2, 80);
+  
+  ctx.fillStyle = "#4a566b";
+  ctx.font = "18px Arial, sans-serif";
+  ctx.fillText("An official service of Ndanda Events", canvas.width / 2, 110);
+
+  ctx.beginPath();
+  ctx.moveTo(100, 150);
+  ctx.lineTo(700, 150);
+  ctx.strokeStyle = "#e6dfd1";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.fillStyle = "#bc7504";
+  ctx.font = "bold 24px Arial, sans-serif";
+  ctx.fillText("OFFICIAL PAYMENT RECEIPT", canvas.width / 2, 200);
+
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#1f2a3d";
+  ctx.font = "16px Arial, sans-serif";
+
+  let y = 260;
+  const drawRow = (label, value) => {
+    ctx.font = "bold 16px Arial, sans-serif";
+    ctx.fillText(label, 100, y);
+    ctx.font = "16px Arial, sans-serif";
+    ctx.textAlign = "right";
+    ctx.fillText(value, 700, y);
+    ctx.textAlign = "left";
+    y += 40;
+  };
+
+  drawRow("Date:", new Date().toLocaleDateString("en-KE", { day: 'numeric', month: 'long', year: 'numeric' }));
+  drawRow("M-Pesa Receipt No:", receiptNum);
+  drawRow("Status:", "PAID");
+  drawRow("Payment For:", purpose);
+  if (deceasedName) drawRow("Memorial For:", deceasedName);
+  drawRow("Paid By:", payerName || "Guest");
+  
+  y += 20;
+  ctx.beginPath();
+  ctx.moveTo(100, y);
+  ctx.lineTo(700, y);
+  ctx.strokeStyle = "#e6dfd1";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  y += 40;
+
+  ctx.font = "bold 20px Arial, sans-serif";
+  ctx.fillText("Total Amount Paid:", 100, y);
+  ctx.textAlign = "right";
+  ctx.font = "bold 28px Arial, sans-serif";
+  ctx.fillStyle = "#bc7504";
+  ctx.fillText(`KSh ${Number(amount).toLocaleString()}`, 700, y);
+  ctx.textAlign = "left";
+  
+  y += 60;
+  ctx.beginPath();
+  ctx.moveTo(100, y);
+  ctx.lineTo(700, y);
+  ctx.strokeStyle = "#e6dfd1";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  y += 80;
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#4a566b";
+  ctx.font = "italic 16px Georgia, serif";
+  ctx.fillText("Thank you for using Tribute Hub.", canvas.width / 2, y);
+  
+  y += 30;
+  ctx.font = "14px Arial, sans-serif";
+  ctx.fillStyle = "#8892a6";
+  ctx.fillText("For support, contact 0717602094 or 0792487000", canvas.width / 2, y);
+  ctx.fillText("www.ndandaevents.com", canvas.width / 2, y + 25);
+
+  ctx.fillStyle = "#bc7504";
+  ctx.fillRect(0, canvas.height - 20, canvas.width, 20);
+
+  const link = document.createElement("a");
+  link.download = `TributeHub-Receipt-${receiptNum}.png`;
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+}
 
 /* ---------- 8. SINGLE OBITUARY PAGE ---------- */
 async function setupObituary() {
@@ -469,29 +716,20 @@ async function setupObituary() {
   }
   document.title = o.name + " | Tribute Hub";
   
-  // Update Meta Tags for sharing
   if ($('#og-title')) $('#og-title').setAttribute('content', `In Loving Memory of ${o.name}`);
   if ($('#og-desc')) $('#og-desc').setAttribute('content', `View the life story of ${o.name} and leave a tribute.`);
   if ($('#og-image') && o.photo_url) $('#og-image').setAttribute('content', o.photo_url);
 
-  /* ---- Extract a YouTube video ID from any YouTube URL form ---- */
   function getVideoId(url) {
     if (!url) return "";
     const trimmed = url.trim();
-
-    if (trimmed.includes("youtube.com/embed/")) {
-      return trimmed.split("embed/")[1].split(/[?&#]/)[0];
-    }
+    if (trimmed.includes("youtube.com/embed/")) return trimmed.split("embed/")[1].split(/[?&#]/)[0];
     const liveMatch = trimmed.match(/youtube\.com\/live\/([a-zA-Z0-9_-]{11})/);
     if (liveMatch) return liveMatch[1];
     const shortMatch = trimmed.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
     if (shortMatch) return shortMatch[1];
     const watchMatch = trimmed.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
     if (watchMatch) return watchMatch[1];
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|live\/)([^#\&\?]*).*/;
-    const match = trimmed.match(regExp);
-    if (match && match[2].length === 11) return match[2];
-
     return "";
   }
 
@@ -520,12 +758,8 @@ async function setupObituary() {
   const livestreamSection = videoId ? `
       <h2 class="ornate">Watch the Funeral</h2>
       <p class="small center" style="margin-bottom: 16px;">Click below to watch the livestream in memory of ${safe(o.name)}.</p>
-      
       <div class="video-thumbnail-wrap" id="video-wrap">
-        ${o.photo_url 
-          ? `<img src="${safe(o.photo_url)}" alt="Video Thumbnail" class="video-thumb-img">` 
-          : `<div class="video-thumb-img" style="background: linear-gradient(135deg, #2f4a6d, #1f2a3d); display: grid; place-items: center; color: #fff; font-size: 4rem;">${initials(o.name)}</div>`
-        }
+        ${o.photo_url ? `<img src="${safe(o.photo_url)}" alt="Video Thumbnail" class="video-thumb-img">` : `<div class="video-thumb-img" style="background: linear-gradient(135deg, #2f4a6d, #1f2a3d); display: grid; place-items: center; color: #fff; font-size: 4rem;">${initials(o.name)}</div>`}
         <div class="video-overlay"></div>
         <button class="video-play-btn" data-video-id="${videoId}" type="button" aria-label="Play livestream">
           <svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32"><path d="M8 5v14l11-7z"/></svg>
@@ -562,15 +796,12 @@ async function setupObituary() {
             </div>
             <div class="progress-bar"><div class="progress-fill" id="fund-bar" style="width: 0%"></div></div>
           </div>
-          
           <div class="ledger-summary" id="ledger-summary">
             <div>Pledged<br><strong id="sum-pledged">KSh 0</strong></div>
             <div>Paid<br><strong id="sum-paid">KSh 0</strong></div>
             <div>Balance<br><strong id="sum-balance">KSh 0</strong></div>
           </div>
-
           <button class="btn gold" id="btn-contribute" style="width:100%; margin-top: 16px;">Contribute via M-Pesa</button>
-          
           <h4 style="margin-top: 24px; font-size: 0.9rem; color: var(--soft);">Recent Contributions</h4>
           <div id="ledger-list" style="max-height: 200px; overflow-y: auto;">
              <p class="small">Loading...</p>
@@ -604,9 +835,6 @@ async function setupObituary() {
       </div>
     </header>
 
-    <!-- ========================================================
-         MOVED TO TOP: CONTRIBUTION & SHARE BOXES
-         ======================================================== -->
     <div class="container" style="margin-top: 30px; margin-bottom: 10px;">
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; align-items: start;">
         ${contribution}
@@ -643,7 +871,6 @@ async function setupObituary() {
           </div>
         </article>
 
-        <!-- SIDEBAR NOW ONLY HOLDS THE 'REMEMBERING' & 'FAMILY' BOXES -->
         <aside class="post-side">
           <div class="side-box">
             <h3>Remembering</h3>
@@ -677,44 +904,22 @@ async function setupObituary() {
   });
   showCandles();
 
-  // --- VIDEO PLAYER LOGIC (YouTube IFrame Player API) ---
   window.playLivestream = (vid) => {
-    if (!vid) {
-      alert("This livestream link is invalid or unavailable.");
-      return;
-    }
-
+    if (!vid) return alert("This livestream link is invalid or unavailable.");
     const wrap = $("#video-wrap");
     if (!wrap) return;
 
-    wrap.innerHTML = `
-      <div class="youtube-player-holder">
-        <div id="youtube-player"></div>
-      </div>
-    `;
+    wrap.innerHTML = `<div class="youtube-player-holder"><div id="youtube-player"></div></div>`;
 
     const buildPlayer = () => {
       new window.YT.Player("youtube-player", {
-        videoId: vid,
-        width: "100%",
-        height: "100%",
-        playerVars: {
-          autoplay: 1,
-          playsinline: 1,
-          rel: 0,
-          modestbranding: 1,
-          origin: window.location.origin
-        },
-        events: {
-          onReady: (event) => { try { event.target.playVideo(); } catch (e) {} }
-        }
+        videoId: vid, width: "100%", height: "100%",
+        playerVars: { autoplay: 1, playsinline: 1, rel: 0, modestbranding: 1, origin: window.location.origin },
+        events: { onReady: (event) => { try { event.target.playVideo(); } catch (e) {} } }
       });
     };
 
-    if (window.YT && typeof window.YT.Player === "function") {
-      buildPlayer();
-      return;
-    }
+    if (window.YT && typeof window.YT.Player === "function") return buildPlayer();
 
     let waited = 0;
     const poll = setInterval(() => {
@@ -730,29 +935,17 @@ async function setupObituary() {
   };
 
   const playBtn = document.querySelector(".video-play-btn");
-  if (playBtn) {
-    playBtn.addEventListener("click", function () {
-      window.playLivestream(this.dataset.videoId);
-    });
-  }
+  if (playBtn) playBtn.addEventListener("click", function () { window.playLivestream(this.dataset.videoId); });
 
   $("#whatsapp").href = "https://wa.me/?text=" + encodeURIComponent(`In loving memory of ${o.name}. View the memorial and leave a tribute here: ${location.href}`);
-  
   $("#copy").addEventListener("click", async () => {
     try { await navigator.clipboard.writeText(location.href); $("#copy").textContent = "Link copied ✓"; }
     catch (e) { $("#copy").textContent = "Copy the address from your browser"; }
   });
-
   $("#download-poster").addEventListener("click", () => generatePoster(o));
 
-  // --- EMOJI TRIBUTES ---
   async function showTributes() {
-    const { data: list, error } = await db
-      .from('tributes')
-      .select('*')
-      .eq('obituary_id', o.id)
-      .order('created_at', { ascending: false });
-
+    const { data: list, error } = await db.from('tributes').select('*').eq('obituary_id', o.id).order('created_at', { ascending: false });
     if (error) return;
     
     $("#comments-title").textContent = "Tributes (" + list.length + ")";
@@ -765,7 +958,6 @@ async function setupObituary() {
             <div style="flex: 1;">
               <b>${safe(t.name)}</b> <span class="small">· ${new Date(t.created_at).toLocaleDateString("en-KE")}</span>
               <p>${safe(t.message)}</p>
-              
               <div class="tribute-reactions">
                 <button onclick="reactToTribute('${t.id}', 'heart')">❤️ ${r.heart || 0}</button>
                 <button onclick="reactToTribute('${t.id}', 'pray')">🙏 ${r.pray || 0}</button>
@@ -795,44 +987,28 @@ async function setupObituary() {
     btn.textContent = "Posting...";
     btn.disabled = true;
 
-    const { error } = await db
-      .from('tributes')
-      .insert([{ 
-        obituary_id: o.id, 
-        name: name.value.trim(), 
-        message: message.value.trim() 
-      }]);
+    const { error } = await db.from('tributes').insert([{ obituary_id: o.id, name: name.value.trim(), message: message.value.trim() }]);
 
-    if (error) {
-      alert("Could not post tribute.");
-    } else {
+    if (error) alert("Could not post tribute.");
+    else {
       name.value = "";
       message.value = "";
       await showTributes();
     }
-    
     btn.textContent = "Post tribute";
     btn.disabled = false;
   });
   
   showTributes();
 
-  // --- WHATSAPP STYLE CONTRIBUTION LEDGER ---
   async function loadLedger() {
     if (!hasFundTarget) return;
-    
     const { data: donations } = await db.from('donations').select('*').eq('obituary_id', o.id).order('created_at', { ascending: false });
-    
     if (!donations) return;
 
     let totalPledged = 0;
     let totalPaid = 0;
-
-    donations.forEach(d => {
-      totalPledged += (d.pledge_amount || 0);
-      totalPaid += (d.paid_amount || 0);
-    });
-
+    donations.forEach(d => { totalPledged += (d.pledge_amount || 0); totalPaid += (d.paid_amount || 0); });
     const balance = totalPledged - totalPaid;
 
     $("#sum-pledged").textContent = "KSh " + totalPledged.toLocaleString();
@@ -844,9 +1020,8 @@ async function setupObituary() {
     if ($("#fund-bar")) $("#fund-bar").style.width = `${pct}%`;
 
     const list = $("#ledger-list");
-    if (donations.length === 0) {
-      list.innerHTML = '<p class="small">No contributions yet.</p>';
-    } else {
+    if (donations.length === 0) list.innerHTML = '<p class="small">No contributions yet.</p>';
+    else {
       list.innerHTML = `<table class="ledger-table">
         <thead><tr><th>Name</th><th>Pledged</th><th>Paid</th><th>Status</th></tr></thead>
         <tbody>
@@ -879,6 +1054,7 @@ async function setupObituary() {
     $("#close-modal").onclick = () => {
       $("#contribute-modal").hidden = true;
       document.body.style.overflow = '';
+      if (typeof resetFormUI === "function") resetFormUI();
     };
 
     const amountInput = $("#c-amount");
@@ -925,51 +1101,134 @@ async function setupObituary() {
     $("#contribute-form").onsubmit = async (e) => {
       e.preventDefault();
       const amt = Number(amountInput.value);
-      if (!amt || amt < 1) {
-        amountInput.focus();
-        return;
-      }
       const name = $("#c-name").value.trim();
       const phone = $("#c-phone").value.trim();
+      
+      if (!amt || amt < 1) return amountInput.focus();
       if (!name || !phone) return;
 
-      submitBtn.textContent = 'Processing...';
-      submitBtn.disabled = true;
-      
-      const paidAmt = currentAction === 'pay' ? amt : 0;
-      
-      const { error: donationError } = await db.from('donations').insert([{
-        obituary_id: o.id,
-        donor_name: name,
-        donor_phone: phone,
-        amount: amt,
-        pledge_amount: amt,
-        paid_amount: paidAmt,
-        status: currentAction === 'pay' ? 'paid' : 'pending'
-      }]);
-
-      if (donationError) {
-        console.error("Donation Error:", donationError);
-        alert("Could not record contribution: " + donationError.message);
-        submitBtn.textContent = 'Error. Try again.';
-        submitBtn.disabled = false;
+      if (currentAction === 'pledge') {
+        const { error } = await db.from('donations').insert([{
+          obituary_id: o.id, donor_name: name, donor_phone: phone,
+          amount: amt, pledge_amount: amt, paid_amount: 0, status: 'pending'
+        }]);
+        if (error) alert("Error recording pledge.");
+        else {
+          alert("Your pledge has been recorded.");
+          $("#contribute-modal").hidden = true;
+          document.body.style.overflow = '';
+          loadLedger();
+        }
         return;
       }
 
-      setTimeout(() => {
-        loadLedger();
-        submitBtn.disabled = false;
-        $("#contribute-form").reset();
-        document.querySelectorAll('.btn-amount').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('active'));
-        document.querySelector('.action-btn[data-action="pay"]').classList.add('active');
-        currentAction = 'pay';
-        actionInput.value = 'pay';
-        updateSubmitLabel();
-        $("#contribute-modal").hidden = true;
-        document.body.style.overflow = '';
-        alert(`Thank you ${name}! Your ${currentAction === 'pay' ? 'payment' : 'pledge'} of KSh ${amt.toLocaleString()} has been recorded.`);
-      }, 1500);
+      $("#form-amount-group").style.display = "none";
+      $("#form-action-group").style.display = "none";
+      $("#form-name-group").style.display = "none";
+      $("#form-phone-group").style.display = "none";
+      $("#submit-contribution").style.display = "none";
+      $("#mpesa-waiting").style.display = "block";
+
+      try {
+        const { data, error } = await db.functions.invoke('mpesa-stk-push', {
+          body: { phone, amount: amt, obituaryId: o.id, accountRef: o.name.substring(0, 12), donorName: name }
+        });
+
+        if (error) {
+          let errorMsg = "Payment request failed. Please check the phone number.";
+          if (error.context) {
+            try {
+              const errJson = await error.context.json();
+              if (errJson && errJson.error) errorMsg = errJson.error;
+            } catch (e) {}
+          }
+          throw new Error(errorMsg);
+        }
+
+        if (data.CheckoutRequestID) {
+          const checkoutId = data.CheckoutRequestID;
+          let secondsWaited = 0;
+          
+          const pollInterval = setInterval(async () => {
+            secondsWaited += 3;
+            const { data: txn } = await db.from('mpesa_transactions')
+              .select('status, mpesa_receipt')
+              .eq('checkout_request_id', checkoutId)
+              .maybeSingle();
+
+            if (txn && txn.status === 'paid') {
+              clearInterval(pollInterval);
+              generateReceipt(txn.mpesa_receipt || "N/A", amt, "Family Contribution", name, o.name);
+              
+              $("#contribute-modal").hidden = true;
+              document.body.style.overflow = '';
+              loadLedger();
+              resetFormUI();
+            } 
+            else if (txn && txn.status === 'failed') {
+              clearInterval(pollInterval);
+              alert("Payment failed or was cancelled. Please try again.");
+              resetFormUI();
+            }
+            else if (secondsWaited >= 60) {
+              clearInterval(pollInterval);
+              $("#mpesa-waiting").style.display = "none";
+              $("#mpesa-manual").style.display = "block";
+            }
+          }, 3000);
+        } else {
+          alert(`Payment request failed: ${data.error || 'Please check your details and try again.'}`);
+          resetFormUI();
+        }
+      } catch (err) {
+        console.error(err);
+        alert(`Error initiating payment: ${err.message}`);
+        resetFormUI();
+      }
+    };
+
+    window.resetFormUI = () => {
+      $("#mpesa-waiting").style.display = "none";
+      $("#mpesa-manual").style.display = "none";
+      $("#form-amount-group").style.display = "block";
+      $("#form-action-group").style.display = "block";
+      $("#form-name-group").style.display = "block";
+      $("#form-phone-group").style.display = "block";
+      $("#submit-contribution").style.display = "block";
+    };
+
+    $("#show-manual-btn").onclick = () => {
+      $("#mpesa-waiting").style.display = "none";
+      $("#mpesa-manual").style.display = "block";
+    };
+
+    $("#submit-manual-btn").onclick = async () => {
+      const receipt = $("#manual-receipt").value.trim().toUpperCase();
+      if (!receipt || receipt.length < 10) return alert("Please enter a valid M-Pesa receipt code.");
+
+      const btn = $("#submit-manual-btn");
+      btn.textContent = 'Verifying...';
+      btn.disabled = true;
+
+      const amt = Number($("#c-amount").value);
+      const name = $("#c-name").value.trim();
+      const phone = $("#c-phone").value.trim();
+
+      await db.from('mpesa_transactions').insert([{
+        obituary_id: o.id, phone_number: phone, amount: amt,
+        mpesa_receipt: receipt, status: 'manual_review', is_manual: true
+      }]);
+
+      await db.from('donations').insert([{
+        obituary_id: o.id, donor_name: name, donor_phone: phone,
+        pledge_amount: amt, paid_amount: 0, status: 'pending', mpesa_receipt: receipt
+      }]);
+
+      alert("Thank you! Your receipt has been submitted. The administrator will verify it shortly.");
+      $("#contribute-modal").hidden = true;
+      document.body.style.overflow = '';
+      resetFormUI();
+      $("#contribute-form").reset();
     };
   }
 }
@@ -1193,6 +1452,21 @@ async function setupDashboard() {
     $("#dash-name").textContent = currentObituary.name;
     $("#dash-view-link").href = `obituary.html?id=${currentId}`;
     
+    // --- NEW: LOAD PROFILE PHOTO ---
+    const dashPhoto = $("#dash-photo");
+    const dashInitials = $("#dash-initials");
+    
+    if (currentObituary.photo_url) {
+      dashPhoto.src = currentObituary.photo_url;
+      dashPhoto.style.display = "block";
+      dashInitials.style.display = "none";
+    } else {
+      dashPhoto.style.display = "none";
+      dashInitials.style.display = "grid";
+      dashInitials.textContent = initials(currentObituary.name);
+    }
+    // ------------------------------
+
     const { data: tributes } = await db
       .from('tributes')
       .select('*')
@@ -1308,71 +1582,130 @@ async function setupAdmin() {
   });
 
   async function loadAdminData() {
-    const { data: obits } = await db.from('obituaries').select('*').order('created_at', { ascending: false });
-    let totalRaised = 0;
-    let totalTributes = 0;
+    try {
+      const { data: obits } = await db.from('obituaries').select('*').order('created_at', { ascending: false });
+      let totalFamilyRaised = 0;
+      let totalTributes = 0;
 
-    const { data: requests } = await db.from('edit_requests').select('*');
-    const alertBanner = $("#admin-alert");
-    
-    if (requests && requests.length > 0) {
-      $("#alert-text").textContent = `You have ${requests.length} pending edit request${requests.length > 1 ? 's' : ''}!`;
-      alertBanner.style.display = "flex"; 
-    } else {
-      alertBanner.style.display = "none"; 
-    }
-
-    const tbody = $("#admin-table tbody");
-    tbody.innerHTML = "";
-
-    if (obits) {
-      for (const o of obits) {
-        const { count: tribs } = await db.from('tributes').select('*', { count: 'exact', head: true }).eq('obituary_id', o.id);
-        
-        const { data: donations } = await db.from('donations').select('paid_amount').eq('obituary_id', o.id);
-        let raised = 0;
-        if (donations) donations.forEach(d => raised += (d.paid_amount || 0));
-        
-        totalRaised += raised;
-        totalTributes += (tribs || 0);
-
-        tbody.innerHTML += `
-          <tr>
-            <td><strong>${safe(o.name)}</strong></td>
-            <td>${safe(o.county)}</td>
-            <td>KSh ${raised.toLocaleString()}</td>
-            <td>
-              <a href="obituary.html?id=${encodeURIComponent(o.id)}" class="btn outline" style="padding: 4px 8px; font-size: 0.75rem;" target="_blank">View</a>
-              <button class="btn gold" style="padding: 4px 8px; font-size: 0.75rem;" onclick="openEditModal('${o.id}')">Edit</button>
-              <button class="btn outline" style="padding: 4px 8px; font-size: 0.75rem; color: #b3261e; border-color: #b3261e;" onclick="adminDeleteObituary('${o.id}')">Delete</button>
-            </td>
-          </tr>
-        `;
+      const { data: requests } = await db.from('edit_requests').select('*');
+      const alertBanner = $("#admin-alert");
+      
+      if (requests && requests.length > 0) {
+        $("#alert-text").textContent = `You have ${requests.length} pending edit request${requests.length > 1 ? 's' : ''}!`;
+        if (alertBanner) alertBanner.style.display = "flex"; 
+      } else {
+        if (alertBanner) alertBanner.style.display = "none"; 
       }
-    }
 
-    $("#stat-obits").textContent = obits ? obits.length : 0;
-    $("#stat-tributes").textContent = totalTributes;
-    $("#stat-raised").textContent = "KSh " + totalRaised.toLocaleString();
+      const { data: platformFees } = await db.from('mpesa_transactions').select('*').eq('amount', 3000).eq('status', 'paid').order('created_at', { ascending: false });
+      let totalRevenue = 0;
+      if (platformFees) totalRevenue = platformFees.length * 3000;
 
-    const reqTbody = $("#requests-table tbody");
-    reqTbody.innerHTML = "";
+      if ($("#stat-revenue")) $("#stat-revenue").textContent = "KSh " + totalRevenue.toLocaleString();
 
-    if (!requests || requests.length === 0) {
-      reqTbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--soft);">No pending requests.</td></tr>';
-    } else {
-      requests.forEach((req) => {
-        reqTbody.innerHTML += `
-          <tr>
-            <td>${new Date(req.created_at).toLocaleDateString("en-KE")}</td>
-            <td><strong>${safe(req.obituary_name)}</strong></td>
-            <td>${safe(req.message)}</td>
-            <td>
-              <button class="btn gold" style="padding: 4px 8px; font-size: 0.75rem;" onclick="openEditModal('${req.obituary_id}', '${req.id}')">Edit & Resolve</button>
-            </td>
-          </tr>
-        `;
-      });
+      const revenueTbody = document.querySelector("#admin-revenue-table tbody");
+      if (revenueTbody) {
+        revenueTbody.innerHTML = "";
+        if (!platformFees || platformFees.length === 0) {
+          revenueTbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--soft); padding: 10px;">No posting fees collected yet.</td></tr>';
+        } else {
+          platformFees.forEach(fee => {
+            revenueTbody.innerHTML += `
+              <tr style="border-bottom: 1px solid var(--line);">
+                <td style="padding: 10px;">${new Date(fee.created_at).toLocaleDateString("en-KE")}</td>
+                <td style="padding: 10px;"><strong>${safe(fee.mpesa_receipt) || 'Processing...'}</strong></td>
+                <td style="padding: 10px;">${safe(fee.phone_number)}</td>
+                <td style="padding: 10px;">KSh 3,000</td>
+              </tr>
+            `;
+          });
+        }
+      }
+
+      const tbody = $("#admin-table tbody");
+      if (tbody) {
+        tbody.innerHTML = "";
+        if (obits) {
+          for (const o of obits) {
+            const { count: tribs } = await db.from('tributes').select('*', { count: 'exact', head: true }).eq('obituary_id', o.id);
+            const { data: donations } = await db.from('donations').select('paid_amount').eq('obituary_id', o.id);
+            
+            let raised = 0;
+            if (donations) donations.forEach(d => raised += (d.paid_amount || 0));
+            
+            totalFamilyRaised += raised;
+            totalTributes += (tribs || 0);
+
+            tbody.innerHTML += `
+              <tr>
+                <td><strong>${safe(o.name)}</strong></td>
+                <td>${safe(o.county)}</td>
+                <td>${tribs || 0}</td>
+                <td>KSh ${raised.toLocaleString()}</td>
+                <td>
+                  <a href="obituary.html?id=${encodeURIComponent(o.id)}" class="btn outline" style="padding: 4px 8px; font-size: 0.75rem;" target="_blank">View</a>
+                  <button class="btn gold" style="padding: 4px 8px; font-size: 0.75rem;" onclick="openEditModal('${o.id}')">Edit</button>
+                  <button class="btn outline" style="padding: 4px 8px; font-size: 0.75rem; color: #b3261e; border-color: #b3261e;" onclick="adminDeleteObituary('${o.id}')">Delete</button>
+                </td>
+              </tr>
+            `;
+          }
+        }
+      }
+
+      if ($("#stat-obits")) $("#stat-obits").textContent = obits ? obits.length : 0;
+      if ($("#stat-tributes")) $("#stat-tributes").textContent = totalTributes;
+      if ($("#stat-raised")) $("#stat-raised").textContent = "KSh " + totalFamilyRaised.toLocaleString();
+
+      const reqTbody = $("#requests-table tbody");
+      if (reqTbody) {
+        reqTbody.innerHTML = "";
+        if (!requests || requests.length === 0) {
+          reqTbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--soft);">No pending requests.</td></tr>';
+        } else {
+          requests.forEach((req) => {
+            reqTbody.innerHTML += `
+              <tr>
+                <td>${new Date(req.created_at).toLocaleDateString("en-KE")}</td>
+                <td><strong>${safe(req.obituary_name)}</strong></td>
+                <td>${safe(req.message)}</td>
+                <td>
+                  <button class="btn gold" style="padding: 4px 8px; font-size: 0.75rem;" onclick="openEditModal('${req.obituary_id}', '${req.id}')">Edit & Resolve</button>
+                </td>
+              </tr>
+            `;
+          });
+        }
+      }
+
+      const { data: manualTxns, error: mpesaError } = await db.from('mpesa_transactions').select('*').eq('status', 'manual_review').order('created_at', { ascending: false });
+      
+      const mpesaTbody = document.querySelector("#admin-mpesa-table tbody");
+      if (mpesaTbody) {
+        mpesaTbody.innerHTML = "";
+        if (mpesaError) {
+          mpesaTbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: red; padding: 10px;">Error loading transactions: ${mpesaError.message}</td></tr>`;
+        } else if (!manualTxns || manualTxns.length === 0) {
+          mpesaTbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--soft); padding: 10px;">No pending manual verifications.</td></tr>';
+        } else {
+          manualTxns.forEach(txn => {
+            mpesaTbody.innerHTML += `
+              <tr style="border-bottom: 1px solid var(--line);">
+                <td style="padding: 10px;">${new Date(txn.created_at).toLocaleDateString("en-KE")}</td>
+                <td style="padding: 10px;"><strong>${safe(txn.mpesa_receipt)}</strong></td>
+                <td style="padding: 10px;">${safe(txn.phone_number)}</td>
+                <td style="padding: 10px;">KSh ${Number(txn.amount).toLocaleString()}</td>
+                <td style="padding: 10px;">
+                  <button class="btn gold" style="padding: 4px 8px; font-size: 0.75rem;" onclick="approveManualMpesa('${txn.id}', '${txn.obituary_id}', '${txn.amount}')">Approve</button>
+                  <button class="btn outline" style="padding: 4px 8px; font-size: 0.75rem; color: #b3261e; border-color: #b3261e;" onclick="rejectManualMpesa('${txn.id}')">Reject</button>
+                </td>
+              </tr>
+            `;
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Admin Dashboard Error:", err);
     }
   }
 
@@ -1449,13 +1782,30 @@ async function setupAdmin() {
     window.URL.revokeObjectURL(url);
   });
 
-  checkAuth();
-
-  setInterval(() => {
-    if (localStorage.getItem("admin_auth") === "true") {
-      loadAdminData();
+  window.approveManualMpesa = async (txnId, obituaryId, amount) => {
+    if (!confirm("Have you verified this receipt code in your M-Pesa statement?")) return;
+    
+    await db.from('mpesa_transactions').update({ status: 'paid', verified_by_admin: true }).eq('id', txnId);
+    
+    if (obituaryId && obituaryId !== 'null') {
+      const { data: pendingDonation } = await db.from('donations').select('id').eq('obituary_id', obituaryId).eq('status', 'pending').order('created_at', { ascending: false }).limit(1).single();
+      if (pendingDonation) {
+        await db.from('donations').update({ paid_amount: Number(amount), status: 'paid' }).eq('id', pendingDonation.id);
+      }
     }
-  }, 5000);
+
+    alert("Payment approved!");
+    loadAdminData();
+  };
+
+  window.rejectManualMpesa = async (txnId) => {
+    if (!confirm("Are you sure you want to reject this payment?")) return;
+    await db.from('mpesa_transactions').update({ status: 'failed', verified_by_admin: false }).eq('id', txnId);
+    alert("Payment rejected.");
+    loadAdminData();
+  };
+
+  checkAuth();
 }
 
 /* ---------- 9. START ---------- */

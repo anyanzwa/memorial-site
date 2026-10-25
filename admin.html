@@ -25,12 +25,15 @@
 <header class="header">
   <div class="container nav">
     <a class="logo" href="index.html">
-      <img src="images/candle-2.jpeg" alt="Tribute Hub" class="logo-img">
-      <span class="logo-text">Tribute<span>Hub</span> Admin</span>
+      <img src="images/Tributehub logo.jpeg" alt="Ndanda" class="logo-img">
+      
     </a>
+    <button class="menu-button" aria-label="Menu">☰</button>
     <ul class="menu">
-      <li><a href="index.html">View Site</a></li>
-      <li><button id="logout-btn" class="btn" style="background: #b3261e; border-color: #b3261e; padding: 9px 20px;">Log Out</button></li>
+      <li><a href="index.html" class="active">Home</a></li>
+      <li><a href="obituaries.html">Obituaries</a></li>
+      <li><a href="index.html#services">Services</a></li>
+      <li><a class="btn gold" href="submit.html">Post an obituary</a></li>
     </ul>
   </div>
 </header>
@@ -63,14 +66,18 @@
           <p class="eyebrow">Platform Administration</p>
           <h1>System Overview</h1>
         </div>
-        <button class="btn outline" id="download-master-report">⬇ Export Master Report (CSV)</button>
+        <div style="display: flex; gap: 12px;">
+          <button class="btn gold" onclick="location.reload()">Refresh Data</button>
+          <button class="btn outline" id="download-master-report">⬇ Export Master Report (CSV)</button>
+        </div>
       </div>
 
       <!-- STATS -->
       <div class="stat-grid">
         <div class="stat-card"><h3>Total Obituaries</h3><p id="stat-obits">0</p></div>
         <div class="stat-card"><h3>Total Tributes</h3><p id="stat-tributes">0</p></div>
-        <div class="stat-card"><h3>Total Funds Raised</h3><p id="stat-raised">KSh 0</p></div>
+        <div class="stat-card"><h3>Platform Revenue (Posting Fees)</h3><p id="stat-revenue">KSh 0</p></div>
+        <div class="stat-card"><h3>Family Donations Raised</h3><p id="stat-raised">KSh 0</p></div>
       </div>
 
       <!-- PENDING EDIT REQUESTS -->
@@ -96,6 +103,53 @@
         </div>
       </div>
 
+      <!-- MANUAL M-PESA VERIFICATIONS -->
+      <div class="panel" style="padding: 0; overflow: hidden; margin-bottom: 32px; border: 2px solid #b3261e;">
+        <div style="padding: 24px 24px 0; background: #fff5f5;">
+          <h2 style="color: #b3261e;">Action Required: Manual M-Pesa Verifications</h2>
+          <p class="small">Users have submitted receipt codes for delayed payments. Check your M-Pesa statement to verify and approve.</p>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="admin-table" id="admin-mpesa-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Receipt Code</th>
+                <th>Phone</th>
+                <th>Amount</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Filled by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RECENT POSTING FEES -->
+      <div class="panel" style="padding: 0; overflow: hidden; margin-bottom: 32px;">
+        <div style="padding: 24px 24px 0;">
+          <h2>Recent Platform Revenue (KSh 3,000 Payments)</h2>
+          <p class="small">All successfully paid obituary posting fees.</p>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="admin-table" id="admin-revenue-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Receipt Code</th>
+                <th>Phone Number</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Filled by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- OBITUARY MANAGEMENT TABLE -->
       <div class="panel" style="padding: 0; overflow: hidden;">
         <div style="padding: 24px 24px 0;">
@@ -107,7 +161,8 @@
               <tr>
                 <th>Name</th>
                 <th>County</th>
-                <th>Funds Raised</th>
+                <th>Tributes</th>
+                <th>Donations Raised</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -155,7 +210,7 @@
         </a>
         <p>A place of comfort & remembrance.</p>
         <p style="margin-top: 12px;">
-          <a href="tel:0792487000 class="btn gold" style="padding: 8px 16px; font-size: .85rem;">📞 Call Ndanda Events</a>
+          <a href="tel:0792487000" class="btn gold" style="padding: 8px 16px; font-size: .85rem;">📞 Call Ndanda Events</a>
         </p>
       </div>
       <div>
@@ -171,21 +226,19 @@
         <ul>
           <li><a href="https://www.facebook.com/mohammad.mawazo/" target="_blank">Facebook Page</a></li>
           <li><a href="https://www.youtube.com/@ndandaeventsltd911" target="_blank">YouTube Channel</a></li>
-          <li>📞 0792 487000(Ndanda Events)</li>
+          <li>📞 0792 487000 (Ndanda Events)</li>
         </ul>
       </div>
     </div>
     <div class="copy">
-      © <span id="year"></span>Tribute Hub. All rights reserved.
+      © <span id="year"></span> Tribute Hub. All rights reserved.
       
-      <!-- Discreet Admin Link -->
       <span style="margin-left: 10px; font-size: 0.75rem; opacity: 0.5;">
         | <a href="admin.html" style="color: inherit; text-decoration: underline;">Staff Login</a>
       </span>
       
       <br><br>
       
-      <!-- NEW CLICKABLE LOGO -->
       <span class="powered-by" style="display: inline-flex; align-items: center; justify-content: center; gap: 10px; margin-top: 16px;">
         POWERED BY:
         <a href="https://www.ndandaevents.com/" target="_blank" rel="noopener noreferrer" style="display: inline-block;">

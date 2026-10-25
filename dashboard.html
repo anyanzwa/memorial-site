@@ -15,11 +15,11 @@
 <header class="header">
   <div class="container nav">
     <a class="logo" href="index.html">
-      <img src="images/candle-2.jpeg" alt="Tribute Hub" class="logo-img">
-      <span class="logo-text">Tribute<span>Hub</span></span>
+      <img src="images/Tributehub logo.jpeg" alt="Ndanda" class="logo-img">
     </a>
+    <button class="menu-button" aria-label="Menu">☰</button>
     <ul class="menu">
-      <li><a href="index.html">Home</a></li>
+      <li><a href="index.html" class="active">Home</a></li>
       <li><a href="obituaries.html">Obituaries</a></li>
       <li><a href="index.html#services">Services</a></li>
       <li><a class="btn gold" href="submit.html">Post an obituary</a></li>
@@ -44,10 +44,19 @@
     <!-- DASHBOARD CONTENT -->
     <div id="dashboard-content" style="display: none;">
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 32px;">
-        <div>
-          <p class="eyebrow">Private Dashboard</p>
-          <h1 id="dash-name">Memorial Name</h1>
+        
+        <!-- NEW: PHOTO & NAME SECTION -->
+        <div style="display: flex; align-items: center; gap: 20px;">
+          <div id="dash-avatar-container">
+            <img id="dash-photo" src="" alt="Profile Photo" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--gold); box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: none;">
+            <div id="dash-initials" style="width: 80px; height: 80px; border-radius: 50%; background: var(--gold); color: white; display: grid; place-items: center; font-size: 2rem; font-weight: bold; border: 3px solid var(--line);"></div>
+          </div>
+          <div>
+            <p class="eyebrow" style="margin-bottom: 4px;">Private Dashboard</p>
+            <h1 id="dash-name" style="margin: 0;">Memorial Name</h1>
+          </div>
         </div>
+
         <div>
           <a id="dash-view-link" class="btn outline" href="#" target="_blank">View Public Page</a>
           <button id="logout-btn" class="btn" style="background: #b3261e; border-color: #b3261e;">Log Out</button>
@@ -76,7 +85,7 @@
         </div>
       </div>
 
-      <!-- NEW: REQUEST AN EDIT SECTION -->
+      <!-- REQUEST AN EDIT SECTION -->
       <div class="panel" style="margin-top: 32px;">
         <h3>Request an Edit</h3>
         <p class="small">To ensure the integrity of the memorial, you cannot edit details directly. Send a message to the Admin below, and they will apply the changes for you.</p>
@@ -126,14 +135,12 @@
     <div class="copy">
       © <span id="year"></span> Tribute Hub. All rights reserved.
       
-      <!-- Discreet Admin Link -->
       <span style="margin-left: 10px; font-size: 0.75rem; opacity: 0.5;">
         | <a href="admin.html" style="color: inherit; text-decoration: underline;">Staff Login</a>
       </span>
       
       <br><br>
       
-      <!-- NEW CLICKABLE LOGO -->
       <span class="powered-by" style="display: inline-flex; align-items: center; justify-content: center; gap: 10px; margin-top: 16px;">
         POWERED BY:
         <a href="https://www.ndandaevents.com/" target="_blank" rel="noopener noreferrer" style="display: inline-block;">

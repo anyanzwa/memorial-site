@@ -17,7 +17,6 @@
   <div class="container nav">
     <a class="logo" href="index.html">
       <img src="images/Tributehub logo.jpeg" alt="Tribute Hub" class="logo-img">
-    
     </a>
     <button class="menu-button" aria-label="Menu">☰</button>
     <ul class="menu">
@@ -86,7 +85,6 @@
               <div><label for="photo">Main Photo of the departed (JPG or PNG, optional, max 5 MB)</label>
                 <input id="photo" type="file" accept="image/*"><div class="error"></div></div>
 
-              <!-- NEW: GALLERY INPUT -->
               <div><label for="gallery">Photo Gallery (Multiple images, optional, max 5 photos)</label>
                 <p class="small" style="margin:0 0 6px">Upload additional photos to create a beautiful gallery on the memorial page.</p>
                 <input id="gallery" type="file" accept="image/*" multiple><div class="error"></div></div>
@@ -235,6 +233,15 @@
           <div id="success-review" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.95rem; margin-top: 16px;"></div>
         </div>
 
+        <!-- NEW: M-Pesa Receipt & Download Button -->
+        <div style="background: #fff; padding: 20px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 24px;">
+          <p style="margin: 0; font-size: 0.9rem; color: var(--soft);">M-Pesa Receipt Number:</p>
+          <h3 id="success-receipt-num" style="margin: 4px 0 16px; color: var(--ink); font-family: monospace; font-size: 1.4rem;">N/A</h3>
+          <button class="btn outline" id="download-receipt-btn" style="width: 100%; border-color: var(--gold); color: var(--gold);">
+            ⬇ Download Payment Receipt
+          </button>
+        </div>
+
         <div style="background: #fff; padding: 24px; border: 1px dashed var(--gold); margin: 28px 0;">
           <p style="margin: 0; font-size: 0.9rem; color: var(--soft);">Your Secret PIN for this page is:</p>
           <h1 id="success-pin" style="font-size: 3rem; letter-spacing: 8px; color: #b3261e; margin: 10px 0; font-family: monospace;"></h1>
@@ -253,7 +260,7 @@
 
 <!-- PAYMENT MODAL -->
 <div id="publish-modal" class="modal-overlay" hidden>
-  <div class="modal-content" style="text-align: center;">
+  <div class="modal-content" style="text-align: center; max-width: 440px;">
     <button class="modal-close" id="close-publish-modal">✕</button>
     <h3 style="margin-bottom: 8px;">Approve Obituary</h3>
     <p class="small" style="margin-bottom: 24px;">To publish this memorial page and generate your secure dashboard PIN, please complete the payment.</p>
@@ -263,7 +270,32 @@
       <h2 style="margin: 4px 0 0; color: var(--gold); font-size: 2rem;">KSh 3,000</h2>
     </div>
 
-    <button class="btn gold" id="pay-publish-btn" style="width: 100%; padding: 15px; font-size: 1.1rem;">Pay via M-Pesa</button>
+    <!-- NEW PHONE INPUT -->
+    <div style="text-align: left; margin-bottom: 20px;">
+      <label for="pay-phone" style="font-weight: 600; font-size: 0.9rem; margin-bottom: 6px; display: block;">M-Pesa Phone Number</label>
+      <input id="pay-phone" type="tel" placeholder="e.g. 0712345678 or 254712345678" style="width: 100%; padding: 12px; font-size: 1rem; border: 1px solid var(--line); border-radius: 8px;">
+      <p class="small" style="margin-top: 6px; color: var(--soft);">Enter the number that will receive the M-Pesa prompt.</p>
+    </div>
+
+    <button class="btn gold" id="pay-publish-btn" style="width: 100%; padding: 15px; font-size: 1.1rem;">Pay KSh 3,000 via M-Pesa</button>
+
+    <!-- WAITING STATE -->
+    <div id="post-waiting" style="display: none; padding: 20px;">
+      <div style="border: 4px solid #f3f3f3; border-top: 4px solid var(--gold); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px;"></div>
+      <p style="font-weight: bold; color: var(--ink);">Waiting for your M-Pesa PIN...</p>
+      <p class="small">Check your phone and enter your PIN to publish.</p>
+      <p class="small" style="margin-top: 15px; color: #b3261e; cursor: pointer; text-decoration: underline;" id="show-post-manual-btn">
+        Didn't get the prompt? Click here to enter your M-Pesa code.
+      </p>
+    </div>
+
+    <!-- MANUAL FALLBACK STATE -->
+    <div id="post-manual" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--line); text-align: left;">
+      <h4 style="margin-bottom: 10px; font-size: 0.95rem;">Already paid but confirmation is delayed?</h4>
+      <p class="small" style="margin-bottom: 10px;">Enter the M-Pesa receipt code from your SMS (e.g., QK12AB34CD). The admin will verify it and publish your page.</p>
+      <input id="post-manual-receipt" placeholder="Enter M-Pesa Code" style="margin-bottom: 10px; width: 100%; padding: 10px;">
+      <button type="button" class="btn outline" id="submit-post-manual-btn" style="width: 100%;">Verify & Submit</button>
+    </div>
   </div>
 </div>
 
