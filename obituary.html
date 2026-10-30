@@ -6,13 +6,9 @@
   <link rel="icon" type="image/jpeg" href="images/Title image.jpeg">
   <title>Obituary | Tribute Hub</title>
   
-  <!-- SHARE LINK TAGS -->
   <meta property="og:title" id="og-title" content="In Loving Memory | Tribute Hub">
   <meta property="og:description" id="og-desc" content="View the life story, funeral details, and leave a tribute.">
-  <meta property="og:image" id="og-image" content="https://fbyudpgnftqsjdavonrk.supabase.co/storage/v1/object/public/memorial-assets/default-share-banner.jpg">
-  <meta property="og:url" id="og-url" content="https://tributehub.com/obituary.html">
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="Tribute Hub">
+  <meta property="og:type" content="article">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,10 +16,41 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;1,500;1,600&display=swap" rel="stylesheet">
   
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Sticky Social Bar */
+    .sticky-socials {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 1000;
+    }
+    .sticky-socials a, .sticky-socials button {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .sticky-socials a:hover, .sticky-socials button:hover {
+      transform: scale(1.1);
+    }
+    .sticky-socials .whatsapp-btn { background: #25D366; }
+    .sticky-socials .youtube-btn { background: #FF0000; }
+    .sticky-socials .qr-btn { background: var(--ink); }
+    .sticky-socials svg { width: 24px; height: 24px; fill: currentColor; }
+  </style>
 </head>
 <body data-page="obituary">
 
-<!-- HEADER -->
 <header class="header">
   <div class="container nav">
     <a class="logo" href="index.html">
@@ -39,12 +66,54 @@
   </div>
 </header>
 
-<!-- THE MEMORIAL PAGE -->
+<!-- STICKY SOCIALS -->
+<div class="sticky-socials">
+  <a href="#" id="sticky-whatsapp" class="whatsapp-btn" target="_blank" aria-label="Share on WhatsApp">
+    <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+  </a>
+  <a href="#" id="sticky-youtube" class="youtube-btn" target="_blank" aria-label="Watch on YouTube">
+    <svg viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+  </a>
+  <button id="show-qr-btn" class="qr-btn" aria-label="Show QR Code">
+    <svg viewBox="0 0 24 24"><path d="M3 3h6v6H3V3zm2 2v2h2V5H5zm8-2h6v6h-6V3zm2 2v2h2V5h-2zM3 15h6v6H3v-6zm2 2v2h2v-2H5zm13-2h3v2h-3v-2zm-5 0h3v2h-3v-2zm-3 2h2v2h-2v-2zm3 2h2v2h-2v-2zm3 0h2v2h-2v-2zm-5 2h2v2h-2v-2zm3 2h2v2h-2v-2zm3-4h2v2h-2v-2zm2-2h2v2h-2v-2zm-2-3h2v2h-2v-2z"/></svg>
+  </button>
+</div>
+
 <main id="obituary">
-  <div class="container section center">
-    <p>Loading memorial...</p>
-  </div>
+  <div class="container section center"><p>Loading memorial...</p></div>
 </main>
+
+<!-- LIVESTREAM PAYWALL MODAL -->
+<div id="livestream-paywall" class="modal-overlay" hidden>
+  <div class="modal-content" style="max-width: 400px; text-align: center;">
+    <button class="modal-close" id="close-paywall-modal">✕</button>
+    <h3 style="margin-bottom: 8px;">Premium Livestream</h3>
+    <p class="small" style="margin-bottom: 24px;">Access to the live funeral service requires a one-time fee of <strong>KSh 200</strong>.</p>
+    
+    <div style="text-align: left; margin-bottom: 16px;">
+      <label for="paywall-phone" style="font-weight: 600; font-size: 0.9rem; margin-bottom: 6px; display: block;">M-Pesa Phone Number</label>
+      <input id="paywall-phone" type="tel" placeholder="e.g. 0712345678" style="width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 8px;">
+    </div>
+    
+    <button class="btn gold" id="pay-livestream-btn" style="width: 100%; padding: 15px; font-size: 1.1rem;">Pay KSh 200 & Watch</button>
+
+    <div id="paywall-waiting" style="display: none; padding: 20px;">
+      <div style="border: 4px solid #f3f3f3; border-top: 4px solid var(--gold); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px;"></div>
+      <p style="font-weight: bold; color: var(--ink);">Waiting for M-Pesa PIN...</p>
+    </div>
+  </div>
+</div>
+
+<!-- QR CODE MODAL -->
+<div id="qr-modal" class="modal-overlay" hidden>
+  <div class="modal-content" style="max-width: 340px; text-align: center;">
+    <button class="modal-close" id="close-qr-modal">✕</button>
+    <h3 style="margin-bottom: 8px;">Share this Memorial</h3>
+    <p class="small" style="margin-bottom: 16px;">Scan to view or share via WhatsApp.</p>
+    <div id="qr-container" style="background: #fff; padding: 10px; border: 1px solid var(--line); border-radius: 8px; display: inline-block; margin-bottom: 16px;"></div>
+    <p class="small" id="qr-link-text" style="word-break: break-all; color: var(--gold);"></p>
+  </div>
+</div>
 
 <!-- CONTRIBUTION MODAL -->
 <div id="contribute-modal" class="modal-overlay" hidden>
@@ -54,7 +123,6 @@
     <p class="small" style="margin-bottom: 20px;">Choose an amount and how you want to contribute.</p>
     
     <form id="contribute-form">
-      <!-- Amount Section -->
       <div class="form-group" id="form-amount-group">
         <label>Amount</label>
         <div class="amount-presets">
@@ -68,23 +136,19 @@
         </div>
       </div>
       
-      <!-- Action Section (Pay vs Pledge Toggle) -->
       <div class="form-group" id="form-action-group">
         <label>Payment Option</label>
         <div class="action-toggle" id="action-toggle">
           <button type="button" class="action-btn active" data-action="pay">
-            <strong>Pay Now</strong>
-            <span>M-Pesa</span>
+            <strong>Pay Now</strong><span>M-Pesa</span>
           </button>
           <button type="button" class="action-btn" data-action="pledge">
-            <strong>Pledge</strong>
-            <span>Pay Later</span>
+            <strong>Pledge</strong><span>Pay Later</span>
           </button>
         </div>
         <input type="hidden" id="c-action" value="pay">
       </div>
 
-      <!-- Donor Details -->
       <div class="form-group" id="form-name-group">
         <label>Your Name</label>
         <input id="c-name" required maxlength="50" placeholder="e.g. John Doe">
@@ -95,26 +159,11 @@
         <input id="c-phone" type="tel" required placeholder="07XX XXX XXX">
       </div>
       
-      <button class="btn gold" type="submit" id="submit-contribution">
-        Pay KSh <span id="pay-amt">0</span> Now
-      </button>
+      <button class="btn gold" type="submit" id="submit-contribution">Pay Now</button>
 
-      <!-- WAITING STATE (Hidden by default) -->
       <div id="mpesa-waiting" style="display: none; text-align: center; padding: 20px;">
         <div style="border: 4px solid #f3f3f3; border-top: 4px solid var(--gold); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px;"></div>
         <p style="font-weight: bold; color: var(--ink);">Waiting for your M-Pesa PIN...</p>
-        <p class="small">Please check your phone and enter your PIN to complete the payment.</p>
-        <p class="small" style="margin-top: 15px; color: #b3261e; cursor: pointer; text-decoration: underline;" id="show-manual-btn">
-          Didn't get the prompt or it failed? Click here to enter your M-Pesa code.
-        </p>
-      </div>
-
-      <!-- MANUAL FALLBACK STATE (Hidden by default) -->
-      <div id="mpesa-manual" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--line);">
-        <h4 style="margin-bottom: 10px; font-size: 0.95rem;">Already paid but confirmation is delayed?</h4>
-        <p class="small" style="margin-bottom: 10px;">Enter the M-Pesa receipt code from your SMS (e.g., QK12AB34CD).</p>
-        <input id="manual-receipt" placeholder="Enter M-Pesa Code" style="margin-bottom: 10px;">
-        <button type="button" class="btn outline" id="submit-manual-btn" style="width: 100%;">Verify Payment</button>
       </div>
     </form>
   </div>
@@ -129,16 +178,12 @@
           <img src="images/Tributehub logo.jpeg" alt="Ndanda" class="logo-img">
         </a>
         <p>A place of comfort & remembrance.</p>
-        <p style="margin-top: 12px;">
-          <a href="tel:0717602094" class="btn gold" style="padding: 8px 16px; font-size: .85rem;">📞 Call Ndanda Events</a>
-        </p>
       </div>
       <div>
         <h3>Explore</h3>
         <ul>
           <li><a href="obituaries.html">Obituaries</a></li>
           <li><a href="submit.html">Post an obituary</a></li>
-          <li><a href="index.html#services">Services</a></li>
         </ul>
       </div>
       <div>
@@ -146,32 +191,19 @@
         <ul>
           <li><a href="https://www.facebook.com/mohammad.mawazo/" target="_blank">Facebook Page</a></li>
           <li><a href="https://www.youtube.com/@ndandaeventsltd911" target="_blank">YouTube Channel</a></li>
-          <li>📞 0717602094 | 0792487000</li>
         </ul>
       </div>
     </div>
     <div class="copy">
       © <span id="year"></span> Tribute Hub. All rights reserved.
-      
       <span style="margin-left: 10px; font-size: 0.75rem; opacity: 0.5;">
         | <a href="admin.html" style="color: inherit; text-decoration: underline;">Staff Login</a>
-      </span>
-      
-      <br><br>
-      
-      <span class="powered-by" style="display: inline-flex; align-items: center; justify-content: center; gap: 10px; margin-top: 16px;">
-        POWERED BY:
-        <a href="https://www.ndandaevents.com/" target="_blank" rel="noopener noreferrer" style="display: inline-block;">
-          <img src="images/ndanda.jpg" alt="Ndanda Events" style="max-height: 45px; width: auto; vertical-align: middle; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-        </a>
       </span>
     </div>
   </div>
 </footer>
 
-<!-- Supabase Library FIRST -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
 </body>

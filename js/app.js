@@ -1,5 +1,5 @@
 /* =====================================================================
-   Tribute Hub: app.js (Supabase Version - Boss Updates)
+   Tribute Hub: app.js (Major Services Update - Google Auth & Paywalls)
    ===================================================================== */
 
 /* ---------- 0. SUPABASE SETUP ---------- */
@@ -27,23 +27,13 @@ async function uploadFile(file, folder) {
   const fileExt = file.name ? file.name.split('.').pop() : 'png';
   const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
   
-  const { data, error } = await db.storage
-    .from('memorial-assets')
-    .upload(fileName, file);
-
-  if (error) {
-    console.error("Upload error:", error);
-    return "";
-  }
-
-  const { data: publicURLData } = db.storage
-    .from('memorial-assets')
-    .getPublicUrl(fileName);
-
+  const { data, error } = await db.storage.from('memorial-assets').upload(fileName, file);
+  if (error) { console.error("Upload error:", error); return ""; }
+  const { data: publicURLData } = db.storage.from('memorial-assets').getPublicUrl(fileName);
   return publicURLData.publicUrl;
 }
 
-/* ---------- 2. OBITUARY CARD ---------- */
+/* ---------- 2. OBITUARY CARD & EFFECTS ---------- */
 function cardHTML(o) {
   const picture = o.photo_url ? `<img src="${safe(o.photo_url)}" alt="">` : initials(o.name);
   return `
@@ -58,11 +48,9 @@ function cardHTML(o) {
     </a>`;
 }
 
-/* ---------- 2b. CARD EFFECTS ---------- */
 function cardEffects(container) {
   const cards = container.querySelectorAll(".card");
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
   let order = 0;
   const watcher = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
@@ -74,29 +62,7 @@ function cardEffects(container) {
     });
     setTimeout(() => { order = 0; }, 600);
   }, { threshold: 0.15 });
-
-  cards.forEach((card) => {
-    card.classList.add("waiting");
-    watcher.observe(card);
-  });
-
-  if (!window.matchMedia("(hover: hover)").matches) return;
-
-  cards.forEach((card) => {
-    card.addEventListener("mousemove", (event) => {
-      const box = card.getBoundingClientRect();
-      const x = (event.clientX - box.left) / box.width;
-      const y = (event.clientY - box.top) / box.height;
-      card.style.setProperty("--ry", (x - 0.5) * 14 + "deg");
-      card.style.setProperty("--rx", (0.5 - y) * 14 + "deg");
-      card.style.setProperty("--mx", x * 100 + "%");
-      card.style.setProperty("--my", y * 100 + "%");
-    });
-    card.addEventListener("mouseleave", () => {
-      card.style.setProperty("--rx", "0deg");
-      card.style.setProperty("--ry", "0deg");
-    });
-  });
+  cards.forEach((card) => { card.classList.add("waiting"); watcher.observe(card); });
 }
 
 function revealOnScroll(elements) {
@@ -119,104 +85,48 @@ function revealOnScroll(elements) {
 function setupSite() {
   const year = $("#year");
   if (year) year.textContent = new Date().getFullYear();
-
   const button = $(".menu-button");
   const menu = $(".menu");
-  if (button && menu) {
-    button.addEventListener("click", () => menu.classList.toggle("open"));
-  }
+  if (button && menu) button.addEventListener("click", () => menu.classList.toggle("open"));
 }
 
-/* ---------- 4. HOME PAGE ---------- */
+/* ---------- 4. HOME & LIST ---------- */
 async function setupHome() {
   const recent = $("#recent");
   const recent2 = $("#recent-2");
-  
-  if (recent) recent.innerHTML = "<p class='small center'>Loading...</p>";
-  if (recent2) recent2.innerHTML = "<p class='small center'>Loading...</p>";
-
-  const { data: all, error } = await db
-    .from('obituaries')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error("Error fetching obituaries:", error);
-    if (recent) recent.innerHTML = "<p class='small center'>Could not load data.</p>";
-    return;
-  }
-
-  if (recent) {
-    recent.innerHTML = all.slice(0, 4).map(cardHTML).join("");
-    cardEffects(recent);
-  }
-
-  if (recent2) {
-    recent2.innerHTML = all.slice(4, 8).map(cardHTML).join("");
-    cardEffects(recent2);
-  }
-
+  const { data: all, error } = await db.from('obituaries').select('*').order('created_at', { ascending: false });
+  if (error) return;
+  if (recent) { recent.innerHTML = all.slice(0, 4).map(cardHTML).join(""); cardEffects(recent); }
+  if (recent2) { recent2.innerHTML = all.slice(4, 8).map(cardHTML).join(""); cardEffects(recent2); }
   revealOnScroll(document.querySelectorAll(".service"));
-
-  const slides = document.querySelectorAll(".slide");
-  const dots = document.querySelectorAll(".dots button");
-  let current = 0;
-
-  if (slides.length > 0) {
-    function showSlide(number) {
-      slides[current].classList.remove("show");
-      dots[current].classList.remove("show");
-      current = number;
-      slides[current].classList.add("show");
-      dots[current].classList.add("show");
-    }
-    dots.forEach((dot, i) => dot.addEventListener("click", () => showSlide(i)));
-    setInterval(() => showSlide((current + 1) % slides.length), 5000);
-  }
 }
 
-/* ---------- 5. OBITUARIES PAGE ---------- */
 async function setupList() {
-  const list = $("#list");
-  const search = $("#q");
-  const county = $("#county");
+  const list = $("#list"), search = $("#q"), county = $("#county");
   if (!list) return;
-
-  list.innerHTML = "<p class='small center'>Loading obituaries...</p>";
-
-  const { data: all, error } = await db
-    .from('obituaries')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    list.innerHTML = "<p class='small center'>Could not load data.</p>";
-    return;
-  }
-
+  const { data: all, error } = await db.from('obituaries').select('*').order('created_at', { ascending: false });
+  if (error) return;
+  
   const counties = [...new Set(all.map((o) => o.county))].sort();
   counties.forEach((c) => { if(c) county.add(new Option(c, c)); });
 
   function show() {
     const word = search.value.trim().toLowerCase();
-    const results = all.filter((o) =>
-      (county.value === "" || o.county === county.value) &&
-      (word === "" || o.name.toLowerCase().includes(word))
-    );
+    const results = all.filter((o) => (county.value === "" || o.county === county.value) && (word === "" || o.name.toLowerCase().includes(word)));
     $("#count").textContent = results.length + " obituaries found";
-    list.innerHTML = results.length
-      ? results.map(cardHTML).join("")
-      : '<p class="empty">No obituaries found. Try another name or county.</p>';
+    list.innerHTML = results.length ? results.map(cardHTML).join("") : '<p class="empty">No obituaries found.</p>';
     cardEffects(list);
   }
-
   search.addEventListener("input", show);
   county.addEventListener("change", show);
   $("#clear").addEventListener("click", () => { search.value = ""; county.value = ""; show(); });
   show();
 }
 
-/* ---------- 6. FORM CHECKING ---------- */
+/* ---------- 5. SUBMIT PAGE (FREE POSTING) ---------- */
+let pendingObituary = null;
+let pendingFiles = { photo: null, gallery: [], program: null };
+
 function checkFields(fields) {
   let ok = true;
   fields.forEach((field) => {
@@ -224,18 +134,12 @@ function checkFields(fields) {
     let message = "";
     if (field.required && field.value.trim() === "") message = "This field is required.";
     else if (field.type === "email" && field.value && !/^\S+@\S+\.\S+$/.test(field.value)) message = "Enter a valid email.";
-    else if (field.type === "tel" && field.value && !/^[+\d\s-]{9,15}$/.test(field.value)) message = "Enter a valid phone number.";
     if (error) error.textContent = message;
     field.classList.toggle("bad", message !== "");
     if (message) ok = false;
   });
   return ok;
 }
-
-/* ---------- 7. SUBMIT PAGE ---------- */
-let pendingObituary = null;
-let pendingFiles = { photo: null, gallery: [], program: null };
-let activeReceiptNumber = "N/A";
 
 function setupSubmit() {
   const form = $("#submit-form");
@@ -244,14 +148,11 @@ function setupSubmit() {
 
   function updatePreview() {
     const name = get("name").value.trim() || "Full name";
-    const born = get("born").value.slice(0, 4) || "";
-    const died = get("died").value.slice(0, 4) || "";
     $("#pv-init").textContent = initials(name);
     $("#pv-name").textContent = name;
-    $("#pv-dates").textContent = born + " – " + died;
-    $("#pv-story").textContent = get("story").value.slice(0, 120) || "A short life story will appear here.";
+    $("#pv-dates").textContent = (get("born").value.slice(0,4) || "") + " – " + (get("died").value.slice(0,4) || "");
+    $("#pv-story").textContent = get("story").value.slice(0, 120) || "A short life story...";
     $("#pv-county").textContent = (get("county").value || "County") + " County";
-
     const file = get("photo").files[0];
     const hasPhoto = file && file.type.startsWith("image/");
     if (hasPhoto && $("#pv-img").dataset.file !== file.name + file.size) {
@@ -266,19 +167,15 @@ function setupSubmit() {
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
-
     const required = ["name", "born", "died", "county", "story", "contact", "email"].map(get);
     if (!checkFields(required)) return;
-    if (get("phone")?.value && !checkFields([get("phone")])) return;
 
     pendingFiles.photo = get("photo").files[0];
-    pendingFiles.gallery = Array.from(get("gallery").files);
     pendingFiles.program = get("program").files[0];
 
     const born = get("born").value.slice(0, 4);
     const died = get("died").value;
     const story = get("story").value.trim();
-    const securePin = Math.floor(1000 + Math.random() * 9000).toString();
 
     pendingObituary = {
       name: get("name").value.trim(), 
@@ -297,9 +194,10 @@ function setupSubmit() {
       contribution_contact: get("contribution-contact")?.value.trim() || "",
       fund_target: get("fund-target")?.value ? Number(get("fund-target").value) : 0,
       fund_reason: get("fund-reason")?.value.trim() || "",
-      secure_pin: securePin,
+      secure_pin: "GOOGLE_AUTH", // Deprecated, but keeping for DB constraint if needed
       family_email: get("email").value.trim(),
-      family_phone: get("phone")?.value.trim() || ""
+      family_phone: get("phone")?.value.trim() || "",
+      gallery_urls: [] // Starts empty, paid for later
     };
 
     $("#prev-name").textContent = pendingObituary.name;
@@ -307,10 +205,8 @@ function setupSubmit() {
     $("#prev-died").textContent = pendingObituary.died.slice(0, 4);
     $("#prev-summary").textContent = pendingObituary.summary;
     $("#prev-county").textContent = pendingObituary.county;
+    $("#prev-story").innerHTML = pendingObituary.story.split(/\n+/).filter(Boolean).map((text) => `<p>${safe(text)}</p>`).join("");
     
-    const storyHTML = pendingObituary.story.split(/\n+/).filter(Boolean).map((text) => `<p>${safe(text)}</p>`).join("");
-    $("#prev-story").innerHTML = storyHTML;
-
     if (pendingFiles.photo) {
       const photoUrl = URL.createObjectURL(pendingFiles.photo);
       $("#prev-portrait").innerHTML = `<img src="${photoUrl}" alt="Photo">`;
@@ -318,13 +214,6 @@ function setupSubmit() {
     } else {
       $("#prev-portrait").textContent = initials(pendingObituary.name);
       $("#prev-bg").style.backgroundImage = 'none';
-    }
-
-    if (pendingFiles.gallery.length > 0) {
-      $("#prev-gallery-section").style.display = "block";
-      $("#prev-gallery").innerHTML = pendingFiles.gallery.map(file => `<img src="${URL.createObjectURL(file)}" alt="Gallery Photo">`).join("");
-    } else {
-      $("#prev-gallery-section").style.display = "none";
     }
 
     let funeralHTML = "";
@@ -335,14 +224,6 @@ function setupSubmit() {
       funeralHTML += `</div>`;
     }
     $("#prev-funeral-details").innerHTML = funeralHTML;
-
-    if (pendingObituary.fund_target > 0) {
-      $("#prev-contribution-box").style.display = "block";
-      $("#prev-fund-reason").textContent = pendingObituary.fund_reason || "Help the family with funeral expenses.";
-      $("#prev-fund-target").textContent = Number(pendingObituary.fund_target).toLocaleString();
-    } else {
-      $("#prev-contribution-box").style.display = "none";
-    }
 
     document.getElementById("form-section").style.display = "none";
     document.getElementById("preview-section").style.display = "block";
@@ -355,247 +236,45 @@ function setupSubmit() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
 
-  document.getElementById("proceed-to-payment").addEventListener("click", () => {
-    $("#publish-modal").hidden = false;
-    document.body.style.overflow = 'hidden';
-    
-    const payPhoneInput = document.getElementById("pay-phone");
-    if (payPhoneInput && pendingObituary && pendingObituary.family_phone) {
-      payPhoneInput.value = pendingObituary.family_phone;
-    }
-  });
-}
-
-/* ---------- 7b. PUBLISH & PAY (submit page only) ---------- */
-document.addEventListener("DOMContentLoaded", () => {
-  const payBtn = $("#pay-publish-btn");
-  const closeBtn = $("#close-publish-modal");
-
-  if (!payBtn) return;
-
-  const waitingBox = $("#post-waiting");
-  const manualBox = $("#post-manual");
-  const waitingDefaultHTML = waitingBox ? waitingBox.innerHTML : "";
-
-  window.resetPublishUI = () => {
-    payBtn.style.display = 'block';
-    payBtn.textContent = 'Pay KSh 3,000 via M-Pesa';
-    payBtn.disabled = false;
-    if (waitingBox) {
-      waitingBox.innerHTML = waitingDefaultHTML;
-      waitingBox.style.display = 'none';
-    }
-    if (manualBox) manualBox.style.display = 'none';
-
-    const showManual = $("#show-post-manual-btn");
-    if (showManual) showManual.onclick = openManualBox;
-  };
-
-  function openManualBox() {
-    if (waitingBox) waitingBox.style.display = 'none';
-    if (manualBox) manualBox.style.display = 'block';
-  }
-
-  payBtn.addEventListener("click", async () => {
-    if (!pendingObituary) return;
-
-    const payPhoneInput = document.getElementById("pay-phone");
-    const phone = payPhoneInput ? payPhoneInput.value.trim() : "";
-
-    if (!phone) {
-      alert("Please enter the M-Pesa phone number to receive the prompt.");
-      if (payPhoneInput) payPhoneInput.focus();
-      return;
-    }
-
-    payBtn.style.display = 'none';
-    if (waitingBox) waitingBox.style.display = 'block';
-
-    try {
-      const { data, error } = await db.functions.invoke('mpesa-stk-push', {
-        body: {
-          phone: phone,
-          amount: 3000,
-          obituaryId: null,
-          accountRef: 'Posting Fee',
-          donorName: pendingObituary.name
-        }
-      });
-
-      if (error) {
-        let errorMsg = "Payment request failed. Please check your phone number.";
-        if (error.context) {
-          try {
-            const errJson = await error.context.json();
-            if (errJson && errJson.error) errorMsg = errJson.error;
-          } catch (e) {}
-        }
-        throw new Error(errorMsg);
-      }
-
-      if (data && data.CheckoutRequestID) {
-        const checkoutId = data.CheckoutRequestID;
-        let secondsWaited = 0;
-
-        const pollInterval = setInterval(async () => {
-          secondsWaited += 3;
-          const { data: txn } = await db
-            .from('mpesa_transactions')
-            .select('status, mpesa_receipt')
-            .eq('checkout_request_id', checkoutId)
-            .maybeSingle();
-
-          if (txn && txn.status === 'paid') {
-            clearInterval(pollInterval);
-            activeReceiptNumber = txn.mpesa_receipt || "N/A"; 
-            await finalizePublishing();
-          } else if (txn && txn.status === 'failed') {
-            clearInterval(pollInterval);
-            alert("Payment failed or was cancelled. Please try again.");
-            resetPublishUI();
-          } else if (secondsWaited >= 60) {
-            clearInterval(pollInterval);
-            openManualBox();
-          }
-        }, 3000);
-      } else {
-        alert(`Payment request failed: ${(data && data.error) || 'Please check your details and try again.'}`);
-        resetPublishUI();
-      }
-    } catch (err) {
-      console.error(err);
-      alert(`Error initiating payment: ${err.message}`);
-      resetPublishUI();
-    }
-  });
-
-  const showManualBtn = $("#show-post-manual-btn");
-  if (showManualBtn) showManualBtn.onclick = openManualBox;
-
-  const submitManualBtn = $("#submit-post-manual-btn");
-  if (submitManualBtn) {
-    submitManualBtn.onclick = async () => {
-      const receiptInput = $("#post-manual-receipt");
-      const receipt = receiptInput ? receiptInput.value.trim().toUpperCase() : "";
-      if (!receipt || receipt.length < 10) return alert("Please enter a valid M-Pesa receipt code.");
-
-      submitManualBtn.textContent = 'Verifying...';
-      submitManualBtn.disabled = true;
-
-      const phoneInput = document.getElementById("pay-phone");
-      const phone = phoneInput ? phoneInput.value.trim() : "";
-
-      await db.from('mpesa_transactions').insert([{
-        obituary_id: null,
-        phone_number: phone,
-        amount: 3000,
-        mpesa_receipt: receipt,
-        status: 'manual_review',
-        is_manual: true
-      }]);
-
-      alert("Thank you! Your receipt has been submitted. The administrator will verify it shortly and publish your page.");
-      submitManualBtn.textContent = 'Submit receipt';
-      submitManualBtn.disabled = false;
-      resetPublishUI();
-      $("#publish-modal").hidden = true;
-      document.body.style.overflow = '';
-
-      window.location.href = "index.html";
-    };
-  }
-
-  async function finalizePublishing() {
-    if (waitingBox) {
-      waitingBox.innerHTML = `<p style="font-weight: bold; color: #1d5a2d;">✅ Payment Received! Publishing...</p>`;
-    }
+  // DIRECT PUBLISH (NO PAYMENT)
+  document.getElementById("publish-btn").addEventListener("click", async () => {
+    const btn = document.getElementById("publish-btn");
+    btn.textContent = 'Publishing...';
+    btn.disabled = true;
 
     const photoUrl = await uploadFile(pendingFiles.photo, 'photos');
-
-    let galleryUrls = [];
-    for (const file of pendingFiles.gallery) {
-      const url = await uploadFile(file, 'gallery');
-      if (url) galleryUrls.push(url);
-    }
-
     const programUrl = await uploadFile(pendingFiles.program, 'programs');
 
     pendingObituary.photo_url = photoUrl;
-    pendingObituary.gallery_urls = galleryUrls;
     pendingObituary.program_url = programUrl;
 
-    const { data, error } = await db
-      .from('obituaries')
-      .insert([pendingObituary])
-      .select();
-
+    const { data, error } = await db.from('obituaries').insert([pendingObituary]).select();
     if (error) {
       alert("Database Error: " + error.message);
-      resetPublishUI();
+      btn.textContent = 'Publish Obituary Now'; btn.disabled = false;
       return;
     }
 
     const newId = data[0].id;
-
-    const reviewHTML = `
-      <div style="background: #fff; padding: 12px; border: 1px solid var(--line); border-radius: 6px;">
-        <strong style="color: var(--gold); display: block; font-size: 0.8rem; text-transform: uppercase;">Deceased Details</strong>
+    document.getElementById("success-email").textContent = pendingObituary.family_email;
+    
+    document.getElementById("success-review").innerHTML = `
+      <div style="background: #fff; padding: 12px; border: 1px solid var(--line); border-radius: 6px; grid-column: 1 / -1;">
+        <strong style="color: var(--gold); display: block; font-size: 0.8rem; text-transform: uppercase;">Published Obituary</strong>
         <span style="font-size: 1.1rem; font-weight: 700;">${safe(pendingObituary.name)}</span><br>
         <span class="small">${pendingObituary.born} – ${pendingObituary.died} | ${safe(pendingObituary.county)} County</span>
       </div>
-      <div style="background: #fff; padding: 12px; border: 1px solid var(--line); border-radius: 6px;">
-        <strong style="color: var(--gold); display: block; font-size: 0.8rem; text-transform: uppercase;">Added Features</strong>
-        <span class="small">
-          ${pendingObituary.fund_target > 0 ? '✅ Fundraising<br>' : '❌ No Fundraising<br>'}
-          ${pendingObituary.livestream ? '✅ Livestream<br>' : '❌ No Livestream<br>'}
-          ${programUrl ? '✅ Program PDF<br>' : '❌ No Program PDF<br>'}
-          ${galleryUrls.length > 0 ? '✅ Gallery (' + galleryUrls.length + ')' : '❌ No Gallery'}
-        </span>
-      </div>
-      <div style="background: #fff; padding: 12px; border: 1px solid var(--line); border-radius: 6px; grid-column: 1 / -1;">
-        <strong style="color: var(--gold); display: block; font-size: 0.8rem; text-transform: uppercase;">Contact Person</strong>
-        <span class="small">${safe(pendingObituary.family_email)} · ${safe(pendingObituary.family_phone || 'No phone')}</span>
-      </div>
     `;
-    document.getElementById("success-review").innerHTML = reviewHTML;
-
-    const receiptEl = document.getElementById("success-receipt-num");
-    if (receiptEl) receiptEl.textContent = activeReceiptNumber;
-    
-    const dlBtn = document.getElementById("download-receipt-btn");
-    if (dlBtn) {
-      dlBtn.onclick = () => generateReceipt(
-        activeReceiptNumber, 
-        3000, 
-        "Obituary Publication Fee", 
-        pendingObituary.family_email, 
-        pendingObituary.name
-      );
-    }
-
-    $("#publish-modal").hidden = true;
-    document.body.style.overflow = '';
 
     document.getElementById("preview-section").style.display = "none";
     document.getElementById("success-section").style.display = "block";
-    document.getElementById("success-pin").textContent = pendingObituary.secure_pin;
     document.getElementById("success-view-btn").href = `obituary.html?id=${newId}`;
-    document.getElementById("success-manage-btn").href = `dashboard.html?id=${newId}`;
-
+    document.getElementById("success-manage-btn").href = `dashboard.html`;
     window.scrollTo({ top: 0, behavior: "smooth" });
-    pendingObituary = null;
-    pendingFiles = { photo: null, gallery: [], program: null };
-  }
+  });
+}
 
-  if (closeBtn) {
-    closeBtn.addEventListener("click", () => {
-      $("#publish-modal").hidden = true;
-      document.body.style.overflow = '';
-    });
-  }
-});
-
-/* ---------- 7c. RECEIPT GENERATOR ---------- */
+/* ---------- 6. RECEIPT GENERATOR (INVOICES) ---------- */
 function generateReceipt(receiptNum, amount, purpose, payerName, deceasedName = "") {
   const canvas = document.createElement("canvas");
   canvas.width = 800;
@@ -626,7 +305,7 @@ function generateReceipt(receiptNum, amount, purpose, payerName, deceasedName = 
 
   ctx.fillStyle = "#bc7504";
   ctx.font = "bold 24px Arial, sans-serif";
-  ctx.fillText("OFFICIAL PAYMENT RECEIPT", canvas.width / 2, 200);
+  ctx.fillText("OFFICIAL PAYMENT INVOICE", canvas.width / 2, 200);
 
   ctx.textAlign = "left";
   ctx.fillStyle = "#1f2a3d";
@@ -691,34 +370,41 @@ function generateReceipt(receiptNum, amount, purpose, payerName, deceasedName = 
   ctx.fillRect(0, canvas.height - 20, canvas.width, 20);
 
   const link = document.createElement("a");
-  link.download = `TributeHub-Receipt-${receiptNum}.png`;
+  link.download = `TributeHub-Invoice-${receiptNum}.png`;
   link.href = canvas.toDataURL("image/png");
   link.click();
 }
 
-/* ---------- 8. SINGLE OBITUARY PAGE ---------- */
+/* ---------- 7. SINGLE OBITUARY PAGE (Paywalls & Sticky Socials) ---------- */
 async function setupObituary() {
   const id = new URLSearchParams(location.search).get("id");
   const page = $("#obituary");
   if (!page) return;
 
   page.innerHTML = "<div class='container section center'><p>Loading memorial...</p></div>";
-
-  const { data: o, error } = await db
-    .from('obituaries')
-    .select('*')
-    .eq('id', id)
-    .single();
-
-  if (error || !o) {
-    page.innerHTML = '<div class="container section center"><h1>Obituary not found</h1><p><a href="obituaries.html">← Back to all obituaries</a></p></div>';
-    return;
-  }
+  const { data: o, error } = await db.from('obituaries').select('*').eq('id', id).single();
+  if (error || !o) { page.innerHTML = '<h1>Obituary not found</h1>'; return; }
   document.title = o.name + " | Tribute Hub";
+
+  // --- SETUP STICKY SOCIALS & QR ---
+  const refCode = "REF-" + id.substring(0, 5).toUpperCase();
+  const shareUrl = `${location.origin}${location.pathname}?id=${id}&ref=${refCode}`;
   
-  if ($('#og-title')) $('#og-title').setAttribute('content', `In Loving Memory of ${o.name}`);
-  if ($('#og-desc')) $('#og-desc').setAttribute('content', `View the life story of ${o.name} and leave a tribute.`);
-  if ($('#og-image') && o.photo_url) $('#og-image').setAttribute('content', o.photo_url);
+  if ($("#sticky-whatsapp")) $("#sticky-whatsapp").href = `https://wa.me/?text=In%20loving%20memory%20of%20${o.name}.%20View%20here:%20${encodeURIComponent(shareUrl)}`;
+  if ($("#sticky-youtube")) {
+    if (o.livestream) $("#sticky-youtube").href = o.livestream;
+    else $("#sticky-youtube").style.display = 'none';
+  }
+  
+  if ($("#show-qr-btn")) {
+    $("#show-qr-btn").onclick = () => {
+      $("#qr-modal").hidden = false;
+      document.body.style.overflow = 'hidden';
+      if ($("#qr-link-text")) $("#qr-link-text").textContent = shareUrl;
+      if ($("#qr-container")) $("#qr-container").innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(shareUrl)}" alt="QR Code">`;
+    };
+  }
+  if ($("#close-qr-modal")) $("#close-qr-modal").onclick = () => { $("#qr-modal").hidden = true; document.body.style.overflow = ''; };
 
   function getVideoId(url) {
     if (!url) return "";
@@ -734,14 +420,7 @@ async function setupObituary() {
   }
 
   const videoId = getVideoId(o.livestream);
-
-  if (videoId) {
-    if (!window.YT && !document.querySelector('script[src*="youtube.com/iframe_api"]')) {
-      const tag = document.createElement("script");
-      tag.src = "https://www.youtube.com/iframe_api";
-      document.head.appendChild(tag);
-    }
-  }
+  const isUnlocked = localStorage.getItem("unlocked_livestream_" + o.id) === "true";
 
   const paragraphs = o.story.split(/\n+/).filter(Boolean).map((text) => `<p>${safe(text)}</p>`).join("");
   const minutes = Math.max(1, Math.round(o.story.split(/\s+/).length / 200));
@@ -757,11 +436,11 @@ async function setupObituary() {
 
   const livestreamSection = videoId ? `
       <h2 class="ornate">Watch the Funeral</h2>
-      <p class="small center" style="margin-bottom: 16px;">Click below to watch the livestream in memory of ${safe(o.name)}.</p>
+      <p class="small center" style="margin-bottom: 16px;">Premium Livestream (KSh 200).</p>
       <div class="video-thumbnail-wrap" id="video-wrap">
         ${o.photo_url ? `<img src="${safe(o.photo_url)}" alt="Video Thumbnail" class="video-thumb-img">` : `<div class="video-thumb-img" style="background: linear-gradient(135deg, #2f4a6d, #1f2a3d); display: grid; place-items: center; color: #fff; font-size: 4rem;">${initials(o.name)}</div>`}
         <div class="video-overlay"></div>
-        <button class="video-play-btn" data-video-id="${videoId}" type="button" aria-label="Play livestream">
+        <button class="video-play-btn" id="play-livestream-trigger" data-video-id="${videoId}" type="button" aria-label="Play livestream">
           <svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32"><path d="M8 5v14l11-7z"/></svg>
         </button>
       </div>
@@ -829,7 +508,6 @@ async function setupObituary() {
         <div style="display: flex; gap: 12px; justify-content: center; margin-top: 20px; flex-wrap: wrap;">
           <button class="btn gold" id="candle">🔥 Light a candle</button>
           ${hasFundTarget ? `<button class="btn gold" id="btn-contribute-hero">🤍 Contribute</button>` : ""}
-          ${videoId ? `<a href="#livestream-section" class="btn outline" style="color:#fff; border-color:#fff;">Watch Livestream</a>` : ""}
         </div>
         <span id="candle-count" class="small" style="display: block; margin-top: 12px; color: #c9d2e0;"></span>
       </div>
@@ -883,7 +561,7 @@ async function setupObituary() {
           <div class="side-box" style="background: #faf7f1; border-color: var(--gold);">
             <h3>Family Controls</h3>
             <p class="small" style="margin-bottom: 12px;">You created this page on this device.</p>
-            <a href="dashboard.html?id=${encodeURIComponent(o.id)}" class="btn gold" style="width: 100%;">Manage Memorial</a>
+            <a href="dashboard.html" class="btn gold" style="width: 100%;">Manage Memorial</a>
           </div>
           ` : ""}
         </aside>
@@ -892,6 +570,7 @@ async function setupObituary() {
 
   if (o.photo_url) $("#hero-bg").style.backgroundImage = 'url("' + o.photo_url + '")';
 
+  // Candles
   const candleKey = "candles_" + o.id;
   function showCandles() {
     const n = Number(localStorage.getItem(candleKey) || 0);
@@ -904,46 +583,68 @@ async function setupObituary() {
   });
   showCandles();
 
-  window.playLivestream = (vid) => {
-    if (!vid) return alert("This livestream link is invalid or unavailable.");
-    const wrap = $("#video-wrap");
-    if (!wrap) return;
-
-    wrap.innerHTML = `<div class="youtube-player-holder"><div id="youtube-player"></div></div>`;
-
-    const buildPlayer = () => {
-      new window.YT.Player("youtube-player", {
-        videoId: vid, width: "100%", height: "100%",
-        playerVars: { autoplay: 1, playsinline: 1, rel: 0, modestbranding: 1, origin: window.location.origin },
-        events: { onReady: (event) => { try { event.target.playVideo(); } catch (e) {} } }
-      });
+  // --- LIVESTREAM PAYWALL LOGIC ---
+  if (videoId) {
+    document.getElementById("play-livestream-trigger").onclick = () => {
+      if (isUnlocked) {
+        playVideo(videoId);
+      } else {
+        $("#livestream-paywall").hidden = false;
+        document.body.style.overflow = 'hidden';
+      }
     };
 
-    if (window.YT && typeof window.YT.Player === "function") return buildPlayer();
+    $("#close-paywall-modal").onclick = () => { $("#livestream-paywall").hidden = true; document.body.style.overflow = ''; };
+    
+    $("#pay-livestream-btn").onclick = async () => {
+      const phone = $("#paywall-phone").value.trim();
+      if (!phone) return alert("Enter your M-Pesa number");
+      
+      const btn = $("#pay-livestream-btn");
+      btn.style.display = 'none';
+      $("#paywall-waiting").style.display = 'block';
 
-    let waited = 0;
-    const poll = setInterval(() => {
-      waited += 100;
-      if (window.YT && typeof window.YT.Player === "function") {
-        clearInterval(poll);
-        buildPlayer();
-      } else if (waited >= 10000) {
-        clearInterval(poll);
-        wrap.innerHTML = `<p class="small center" style="padding: 20px;">Could not load the video player. Please refresh and try again.</p>`;
+      try {
+        const { data, error } = await db.functions.invoke('mpesa-stk-push', {
+          body: { phone, amount: 200, obituaryId: o.id, accountRef: "Livestream", donorName: "Viewer" }
+        });
+        if (error) throw error;
+
+        if (data.CheckoutRequestID) {
+          const poll = setInterval(async () => {
+            const { data: txn } = await db.from('mpesa_transactions').select('status, mpesa_receipt').eq('checkout_request_id', data.CheckoutRequestID).single();
+            if (txn && txn.status === 'paid') {
+              clearInterval(poll);
+              localStorage.setItem("unlocked_livestream_" + o.id, "true");
+              generateReceipt(txn.mpesa_receipt || "N/A", 200, "Livestream Access", "Guest", o.name);
+              $("#livestream-paywall").hidden = true;
+              document.body.style.overflow = '';
+              playVideo(videoId);
+            }
+          }, 3000);
+        }
+      } catch (err) {
+        alert("Payment failed. Try again.");
+        btn.style.display = 'block';
+        $("#paywall-waiting").style.display = 'none';
       }
-    }, 100);
-  };
+    };
+  }
 
-  const playBtn = document.querySelector(".video-play-btn");
-  if (playBtn) playBtn.addEventListener("click", function () { window.playLivestream(this.dataset.videoId); });
+  function playVideo(vid) {
+    const wrap = $("#video-wrap");
+    wrap.innerHTML = `<div class="youtube-player-holder"><iframe src="https://www.youtube.com/embed/${vid}?autoplay=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen style="width:100%; height:100%; border:0;"></iframe></div>`;
+  }
 
-  $("#whatsapp").href = "https://wa.me/?text=" + encodeURIComponent(`In loving memory of ${o.name}. View the memorial and leave a tribute here: ${location.href}`);
+  // Share buttons
+  $("#whatsapp").href = "https://wa.me/?text=" + encodeURIComponent(`In loving memory of ${o.name}. View the memorial and leave a tribute here: ${shareUrl}`);
   $("#copy").addEventListener("click", async () => {
-    try { await navigator.clipboard.writeText(location.href); $("#copy").textContent = "Link copied ✓"; }
+    try { await navigator.clipboard.writeText(shareUrl); $("#copy").textContent = "Link copied ✓"; }
     catch (e) { $("#copy").textContent = "Copy the address from your browser"; }
   });
   $("#download-poster").addEventListener("click", () => generatePoster(o));
 
+  // Tributes logic
   async function showTributes() {
     const { data: list, error } = await db.from('tributes').select('*').eq('obituary_id', o.id).order('created_at', { ascending: false });
     if (error) return;
@@ -1001,6 +702,7 @@ async function setupObituary() {
   
   showTributes();
 
+  // Contributions Ledger
   async function loadLedger() {
     if (!hasFundTarget) return;
     const { data: donations } = await db.from('donations').select('*').eq('obituary_id', o.id).order('created_at', { ascending: false });
@@ -1233,7 +935,7 @@ async function setupObituary() {
   }
 }
 
-/* ---------- 8b. ANNOUNCEMENT POSTER GENERATOR ---------- */
+/* ---------- 7b. ANNOUNCEMENT POSTER GENERATOR ---------- */
 function generatePoster(o) {
   const canvas = document.createElement("canvas");
   canvas.width = 1080;
@@ -1243,7 +945,6 @@ function generatePoster(o) {
   ctx.textAlign = "center";
 
   const drawTextAndFinish = (img) => {
-    
     if (img) {
       const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
       const x = (canvas.width / 2) - (img.width / 2) * scale;
@@ -1401,151 +1102,94 @@ function generatePoster(o) {
   }
 }
 
-/* ---------- 8c. FAMILY DASHBOARD ---------- */
+/* ---------- 8. FAMILY DASHBOARD (Google Auth) ---------- */
 async function setupDashboard() {
   const loginGate = $("#login-gate");
   const dashboard = $("#dashboard-content");
-  const idInput = $("#login-id");
-  const pinInput = $("#login-pin");
-  const loginBtn = $("#login-btn");
-  const errorMsg = $("#login-error");
+  const googleBtn = $("#google-login-btn");
+  const logoutBtn = $("#logout-btn");
   
-  let currentId = null;
   let currentObituary = null;
 
-  loginBtn.addEventListener("click", async () => {
-    const id = idInput.value.trim();
-    const pin = pinInput.value.trim();
-    
-    const { data, error } = await db
-      .from('obituaries')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (data && (pin === data.secure_pin)) {
-      currentId = id;
-      currentObituary = data;
-      loginGate.style.display = "none";
-      dashboard.style.display = "block";
-      await loadDashboardData();
-    } else {
-      errorMsg.style.display = "block";
-    }
-  });
-
-  const urlId = new URLSearchParams(location.search).get("id");
-  if (urlId) {
-    idInput.value = urlId;
+  // Check Auth State
+  const { data: { session } } = await db.auth.getSession();
+  if (session) {
+    showDashboard(session.user.email);
+  } else {
     loginGate.style.display = "block";
-  }
-
-  $("#logout-btn").addEventListener("click", () => {
     dashboard.style.display = "none";
-    loginGate.style.display = "block";
-    idInput.value = "";
-    pinInput.value = "";
-    errorMsg.style.display = "none";
-  });
-
-  async function loadDashboardData() {
-    $("#dash-name").textContent = currentObituary.name;
-    $("#dash-view-link").href = `obituary.html?id=${currentId}`;
-    
-    // --- NEW: LOAD PROFILE PHOTO ---
-    const dashPhoto = $("#dash-photo");
-    const dashInitials = $("#dash-initials");
-    
-    if (currentObituary.photo_url) {
-      dashPhoto.src = currentObituary.photo_url;
-      dashPhoto.style.display = "block";
-      dashInitials.style.display = "none";
-    } else {
-      dashPhoto.style.display = "none";
-      dashInitials.style.display = "grid";
-      dashInitials.textContent = initials(currentObituary.name);
-    }
-    // ------------------------------
-
-    const { data: tributes } = await db
-      .from('tributes')
-      .select('*')
-      .eq('obituary_id', currentId)
-      .order('created_at', { ascending: false });
-
-    const tribBox = $("#dash-tributes");
-    if (!tributes || tributes.length === 0) {
-      tribBox.innerHTML = '<p class="small">No tributes yet.</p>';
-    } else {
-      tribBox.innerHTML = tributes.map((t) => `
-        <div style="border-bottom: 1px solid var(--line); padding: 12px 0; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
-          <div>
-            <b style="font-size: 0.9rem;">${safe(t.name)}</b> <span class="small">· ${new Date(t.created_at).toLocaleDateString("en-KE")}</span>
-            <p style="margin: 4px 0 0; font-size: 0.9rem;">${safe(t.message)}</p>
-          </div>
-          <button class="btn outline" style="padding: 4px 8px; font-size: 0.75rem; color: #b3261e; border-color: #b3261e;" onclick="deleteTribute('${t.id}')">Delete</button>
-        </div>
-      `).join("");
-    }
-
-    const { data: donations } = await db.from('donations').select('*').eq('obituary_id', currentId);
-    let totalPaid = 0;
-    if (donations) donations.forEach(d => totalPaid += (d.paid_amount || 0));
-    
-    $("#dash-raised").textContent = `KSh ${totalPaid.toLocaleString()}`;
   }
 
-  window.deleteTribute = async (tributeId) => {
-    if (!confirm("Are you sure you want to hide this tribute?")) return;
-    await db.from('tributes').delete().eq('id', tributeId);
-    await loadDashboardData();
-  };
+  if (googleBtn) {
+    googleBtn.addEventListener("click", async () => {
+      const { error } = await db.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: window.location.href }
+      });
+      if (error) alert("Google Login Error: " + error.message);
+    });
+  }
 
-  $("#download-csv").addEventListener("click", async () => {
-    const { data: donations } = await db
-      .from('donations')
-      .select('*')
-      .eq('obituary_id', currentId);
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", async () => {
+      await db.auth.signOut();
+      window.location.reload();
+    });
+  }
 
-    if (!donations || donations.length === 0) {
-      alert("No contributions recorded yet.");
+  async function showDashboard(email) {
+    loginGate.style.display = "none";
+    
+    // Find obituary matching this email
+    const { data, error } = await db.from('obituaries').select('*').eq('family_email', email).limit(1).single();
+    
+    if (error || !data) {
+      alert("No memorial found linked to " + email + ". Please ensure you used this email when submitting the obituary.");
+      await db.auth.signOut();
+      window.location.reload();
       return;
     }
 
-    let csv = "Date,Donor Name,Phone,Pledged (KSh),Paid (KSh),Status\n";
-    donations.forEach(d => {
-      csv += `"${new Date(d.created_at).toLocaleDateString("en-KE")}","${d.donor_name}","${d.donor_phone}",${d.pledge_amount || 0},${d.paid_amount || 0},"${d.status}"\n`;
-    });
+    currentObituary = data;
+    dashboard.style.display = "block";
+    $("#dash-name").textContent = currentObituary.name;
+    $("#dash-view-link").href = `obituary.html?id=${currentObituary.id}`;
+    
+    // Set Profile Photo
+    if (currentObituary.photo_url) {
+      $("#dash-photo").src = currentObituary.photo_url;
+      $("#dash-photo").style.display = "block";
+      $("#dash-initials").style.display = "none";
+    } else {
+      $("#dash-photo").style.display = "none";
+      $("#dash-initials").style.display = "grid";
+      $("#dash-initials").textContent = initials(currentObituary.name);
+    }
 
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${currentObituary.name.replace(/\s+/g, '-')}-Contributions.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  });
+    // Load Tributes
+    const { data: tribs } = await db.from('tributes').select('*').eq('obituary_id', currentObituary.id).order('created_at', { ascending: false });
+    $("#dash-tributes").innerHTML = tribs.length 
+      ? tribs.map(t => `<div style="border-bottom: 1px solid #eee; padding: 10px 0;"><b>${safe(t.name)}</b><p>${safe(t.message)}</p></div>`).join("") 
+      : "<p>No tributes yet.</p>";
 
-  const editForm = $("#request-edit-form");
-  if (editForm) {
-    editForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const msg = $("#edit-message").value.trim();
-      if (!msg) return;
+    // Load Donations
+    const { data: dons } = await db.from('donations').select('paid_amount').eq('obituary_id', currentObituary.id);
+    let raised = 0;
+    if (dons) dons.forEach(d => raised += (d.paid_amount || 0));
+    $("#dash-raised").textContent = "KSh " + raised.toLocaleString();
 
-      await db.from('edit_requests').insert([{
-        obituary_id: currentId,
-        obituary_name: currentObituary.name,
-        message: msg
-      }]);
-
-      alert("Your request has been sent to the Admin. They will review and apply the changes shortly.");
-      editForm.reset();
-    });
+    // Setup Premium Service Buttons
+    const galleryBtn = $("#btn-add-gallery");
+    if (galleryBtn) {
+      galleryBtn.onclick = () => {
+        alert("Gallery Upload requires an STK Push of KSh 500. This feature will open the upload modal once integrated.");
+        // Logic to trigger STK push for 500 and then open an upload modal
+      };
+    }
   }
 }
 
-/* ---------- 8d. ADMIN DASHBOARD ---------- */
+/* ---------- 9. ADMIN DASHBOARD ---------- */
 async function setupAdmin() {
   const loginGate = $("#login-gate");
   const adminContent = $("#admin-content");
@@ -1597,17 +1241,22 @@ async function setupAdmin() {
         if (alertBanner) alertBanner.style.display = "none"; 
       }
 
-      const { data: platformFees } = await db.from('mpesa_transactions').select('*').eq('amount', 3000).eq('status', 'paid').order('created_at', { ascending: false });
-      let totalRevenue = 0;
-      if (platformFees) totalRevenue = platformFees.length * 3000;
+      // --- FETCH PLATFORM REVENUE (Livestream 200 & Gallery 500) ---
+      const { data: platformFees } = await db.from('mpesa_transactions')
+        .select('*')
+        .in('amount', [200, 500])
+        .eq('status', 'paid')
+        .order('created_at', { ascending: false });
 
+      let totalRevenue = 0;
+      if (platformFees) platformFees.forEach(fee => totalRevenue += fee.amount);
       if ($("#stat-revenue")) $("#stat-revenue").textContent = "KSh " + totalRevenue.toLocaleString();
 
       const revenueTbody = document.querySelector("#admin-revenue-table tbody");
       if (revenueTbody) {
         revenueTbody.innerHTML = "";
         if (!platformFees || platformFees.length === 0) {
-          revenueTbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--soft); padding: 10px;">No posting fees collected yet.</td></tr>';
+          revenueTbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--soft); padding: 10px;">No premium services collected yet.</td></tr>';
         } else {
           platformFees.forEach(fee => {
             revenueTbody.innerHTML += `
@@ -1615,7 +1264,7 @@ async function setupAdmin() {
                 <td style="padding: 10px;">${new Date(fee.created_at).toLocaleDateString("en-KE")}</td>
                 <td style="padding: 10px;"><strong>${safe(fee.mpesa_receipt) || 'Processing...'}</strong></td>
                 <td style="padding: 10px;">${safe(fee.phone_number)}</td>
-                <td style="padding: 10px;">KSh 3,000</td>
+                <td style="padding: 10px;">KSh ${fee.amount.toLocaleString()} <br><span class="small">${fee.account_reference}</span></td>
               </tr>
             `;
           });
@@ -1808,7 +1457,7 @@ async function setupAdmin() {
   checkAuth();
 }
 
-/* ---------- 9. START ---------- */
+/* ---------- 10. START ---------- */
 document.addEventListener("DOMContentLoaded", () => {
   setupSite();
   const page = document.body.dataset.page;

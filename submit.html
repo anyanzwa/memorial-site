@@ -12,7 +12,6 @@
 </head>
 <body data-page="submit">
 
-<!-- HEADER -->
 <header class="header">
   <div class="container nav">
     <a class="logo" href="index.html">
@@ -29,16 +28,6 @@
 </header>
 
 <main>
-  <!-- NDANDA EVENTS TOP BANNER -->
-  <div style="background: var(--gold); color: #fff; text-align: center; padding: 10px 20px; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;">
-    <span>An official service of</span>
-    <a href="https://www.ndandaevents.com/" target="_blank" rel="noopener noreferrer" style="display: inline-flex; align-items: center;">
-      <img src="images/ndanda.jpg" alt="Ndanda Events" style="height: 28px; width: auto; background: #fff; padding: 2px 6px; border-radius: 4px;">
-    </a>
-    <a href="https://www.ndandaevents.com/" target="_blank" rel="noopener noreferrer" style="color: #fff; text-decoration: underline; margin-left: 5px;">
-      Visit NdandaEvents.com
-    </a>
-  </div>
   <section class="section">
     <div class="container">
       
@@ -46,8 +35,7 @@
       <div id="form-section">
         <p class="eyebrow">Post an obituary</p>
         <h1>Honour your loved one</h1>
-        <p>Fill in the details. The preview on the right updates as you type. Fields marked * are required.</p>
-        <div id="notice" class="notice" role="status"></div>
+        <p>Basic obituaries are published free of charge. Premium features can be added later in your dashboard.</p>
 
         <div class="two-col" style="margin-top:24px">
           <div class="panel">
@@ -82,12 +70,15 @@
                   <option>Wajir</option><option>West Pokot</option>
                 </select><div class="error"></div></div>
 
-              <div><label for="photo">Main Photo of the departed (JPG or PNG, optional, max 5 MB)</label>
+              <div><label for="photo">Main Photo of the departed (JPG or PNG, optional)</label>
                 <input id="photo" type="file" accept="image/*"><div class="error"></div></div>
 
-              <div><label for="gallery">Photo Gallery (Multiple images, optional, max 5 photos)</label>
-                <p class="small" style="margin:0 0 6px">Upload additional photos to create a beautiful gallery on the memorial page.</p>
-                <input id="gallery" type="file" accept="image/*" multiple><div class="error"></div></div>
+              <!-- PREMIUM FEATURE: GALLERY -->
+              <div style="background: #faf7f1; border: 1px dashed var(--gold); padding: 16px; margin: 16px 0; border-radius: 8px;">
+                <label for="gallery" style="color: var(--gold); font-weight: 700;">📸 Premium Photo Gallery (KSh 500)</label>
+                <p class="small" style="margin-bottom: 8px;">Upload up to 5 additional photos. You will be prompted to pay after publishing.</p>
+                <input id="gallery" type="file" accept="image/*" multiple disabled style="background: #e0e0e0; cursor: not-allowed;"><div class="error"></div>
+              </div>
 
               <div><label for="story">Life story *</label>
                 <textarea id="story" maxlength="1500" required placeholder="Share their life, faith, family and legacy"></textarea><div class="error"></div></div>
@@ -98,7 +89,7 @@
               <div><label for="livestream">Livestream Link (YouTube, optional)</label>
                 <input id="livestream" type="url" placeholder="e.g. https://youtube.com/live/..."><div class="error"></div></div>
 
-              <div><label for="program">Funeral program (PDF, optional, max 5 MB)</label>
+              <div><label for="program">Funeral program (PDF, optional)</label>
                 <input id="program" type="file" accept="application/pdf"><div class="error"></div></div>
 
               <!-- CONTRIBUTION SECTION -->
@@ -141,11 +132,11 @@
               <h3 style="margin-top:14px">Your contact details</h3>
               <div><label for="contact">Your name *</label><input id="contact" required><div class="error"></div></div>
               <div class="row">
-                <div><label for="email">Email *</label><input id="email" type="email" required><div class="error"></div></div>
+                <div><label for="email">Email * (Used for Google Dashboard login)</label><input id="email" type="email" required><div class="error"></div></div>
                 <div><label for="phone">Phone</label><input id="phone" type="tel" placeholder="+254..."><div class="error"></div></div>
               </div>
 
-              <button class="btn gold" type="submit" style="font-size: 1.1rem; padding: 15px; margin-top: 20px;">Preview Obituary</button>
+              <button class="btn gold" type="submit" style="font-size: 1.1rem; padding: 15px; margin-top: 20px;">Preview & Publish</button>
             </form>
           </div>
 
@@ -168,7 +159,7 @@
       <div id="preview-section" style="display: none;">
         <div class="center" style="margin-bottom: 32px;">
           <h2>Preview Your Memorial Page</h2>
-          <p class="lead">Review the details below. If everything looks correct, proceed to payment.</p>
+          <p class="lead">Review the details below. If everything looks correct, hit Publish.</p>
         </div>
 
         <header class="post-hero" style="margin-bottom: 40px; border-radius: 12px;">
@@ -189,12 +180,6 @@
             <h2 class="ornate" style="margin-top:0">Life Story</h2>
             <div id="prev-story" style="font-family: Georgia, serif; line-height: 1.8; font-size: 1.1rem;"></div>
             
-            <!-- PREVIEW GALLERY -->
-            <div id="prev-gallery-section" style="display: none; margin-top: 32px;">
-              <h2 class="ornate">Photo Gallery</h2>
-              <div class="gallery-grid" id="prev-gallery"></div>
-            </div>
-
             <div id="prev-funeral-details" style="margin-top: 32px;"></div>
           </div>
           
@@ -203,49 +188,28 @@
               <h3>Remembering</h3>
               <p class="facts-list"><span>Home county</span> <span id="prev-county">---</span></p>
             </div>
-            <div class="side-box" id="prev-contribution-box" style="display: none;">
-              <h3>Contribute to the family</h3>
-              <p class="small" id="prev-fund-reason"></p>
-              <div class="fund-progress">
-                <div class="fund-stats">
-                  <span><strong>KSh 0</strong> raised</span>
-                  <span>Target: KSh <span id="prev-fund-target">0</span></span>
-                </div>
-                <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
-              </div>
-            </div>
           </aside>
         </div>
 
         <div style="display: flex; gap: 16px; justify-content: center; margin-top: 48px; flex-wrap: wrap;">
           <button class="btn outline" id="back-to-edit" style="font-size: 1.1rem; padding: 15px 30px;">Edit Details</button>
-          <button class="btn gold" id="proceed-to-payment" style="font-size: 1.1rem; padding: 15px 30px;">Proceed to Payment (KSh 3,000)</button>
+          <button class="btn gold" id="publish-btn" style="font-size: 1.1rem; padding: 15px 30px;">Publish Obituary Now</button>
         </div>
       </div>
 
       <!-- SUCCESS SCREEN -->
       <div id="success-section" style="display: none; max-width: 700px; margin: 40px auto; text-align: center; background: #fff; padding: 40px 20px; border: 1px solid var(--line); box-shadow: var(--shadow);">
-        <h2 style="color: var(--gold); margin-bottom: 8px; font-size: 2.2rem;">✓ Payment Confirmed</h2>
-        <p style="font-size: 1.1rem; color: var(--soft); margin-bottom: 32px;">The memorial page is now live and ready to be shared.</p>
+        <h2 style="color: var(--gold); margin-bottom: 8px; font-size: 2.2rem;">✓ Published Successfully</h2>
+        <p style="font-size: 1.1rem; color: var(--soft); margin-bottom: 32px;">The memorial page is now live.</p>
         
         <div style="text-align: left; background: #faf7f1; padding: 24px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 28px;">
           <h3 style="margin-top: 0; border-bottom: 1px solid var(--line); padding-bottom: 12px; font-size: 1.2rem; color: var(--ink);">Obituary Summary</h3>
           <div id="success-review" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.95rem; margin-top: 16px;"></div>
         </div>
 
-        <!-- NEW: M-Pesa Receipt & Download Button -->
-        <div style="background: #fff; padding: 20px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 24px;">
-          <p style="margin: 0; font-size: 0.9rem; color: var(--soft);">M-Pesa Receipt Number:</p>
-          <h3 id="success-receipt-num" style="margin: 4px 0 16px; color: var(--ink); font-family: monospace; font-size: 1.4rem;">N/A</h3>
-          <button class="btn outline" id="download-receipt-btn" style="width: 100%; border-color: var(--gold); color: var(--gold);">
-            ⬇ Download Payment Receipt
-          </button>
-        </div>
-
-        <div style="background: #fff; padding: 24px; border: 1px dashed var(--gold); margin: 28px 0;">
-          <p style="margin: 0; font-size: 0.9rem; color: var(--soft);">Your Secret PIN for this page is:</p>
-          <h1 id="success-pin" style="font-size: 3rem; letter-spacing: 8px; color: #b3261e; margin: 10px 0; font-family: monospace;"></h1>
-          <p class="small" style="margin: 0; color: #b3261e; font-weight: bold;">⚠️ Please write this down. You will need it to manage this page.</p>
+        <div style="background: #e7f4ea; padding: 24px; border: 1px solid #b9dcc1; margin: 28px 0; border-radius: 8px;">
+          <h3 style="margin: 0 0 10px; color: #1d5a2d;">Next Steps</h3>
+          <p class="small" style="text-align: left;">To manage this page, add premium features (like the Photo Gallery), or view the livestream paywall settings, please log into the **Family Dashboard using the Google account associated with this email: <b id="success-email"></b>**</p>
         </div>
         
         <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
@@ -258,48 +222,6 @@
   </section>
 </main>
 
-<!-- PAYMENT MODAL -->
-<div id="publish-modal" class="modal-overlay" hidden>
-  <div class="modal-content" style="text-align: center; max-width: 440px;">
-    <button class="modal-close" id="close-publish-modal">✕</button>
-    <h3 style="margin-bottom: 8px;">Approve Obituary</h3>
-    <p class="small" style="margin-bottom: 24px;">To publish this memorial page and generate your secure dashboard PIN, please complete the payment.</p>
-    
-    <div style="background: #faf7f1; padding: 16px; border: 1px solid var(--line); margin-bottom: 20px; border-radius: 8px;">
-      <p style="margin: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--soft);">Publication Fee</p>
-      <h2 style="margin: 4px 0 0; color: var(--gold); font-size: 2rem;">KSh 3,000</h2>
-    </div>
-
-    <!-- NEW PHONE INPUT -->
-    <div style="text-align: left; margin-bottom: 20px;">
-      <label for="pay-phone" style="font-weight: 600; font-size: 0.9rem; margin-bottom: 6px; display: block;">M-Pesa Phone Number</label>
-      <input id="pay-phone" type="tel" placeholder="e.g. 0712345678 or 254712345678" style="width: 100%; padding: 12px; font-size: 1rem; border: 1px solid var(--line); border-radius: 8px;">
-      <p class="small" style="margin-top: 6px; color: var(--soft);">Enter the number that will receive the M-Pesa prompt.</p>
-    </div>
-
-    <button class="btn gold" id="pay-publish-btn" style="width: 100%; padding: 15px; font-size: 1.1rem;">Pay KSh 3,000 via M-Pesa</button>
-
-    <!-- WAITING STATE -->
-    <div id="post-waiting" style="display: none; padding: 20px;">
-      <div style="border: 4px solid #f3f3f3; border-top: 4px solid var(--gold); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px;"></div>
-      <p style="font-weight: bold; color: var(--ink);">Waiting for your M-Pesa PIN...</p>
-      <p class="small">Check your phone and enter your PIN to publish.</p>
-      <p class="small" style="margin-top: 15px; color: #b3261e; cursor: pointer; text-decoration: underline;" id="show-post-manual-btn">
-        Didn't get the prompt? Click here to enter your M-Pesa code.
-      </p>
-    </div>
-
-    <!-- MANUAL FALLBACK STATE -->
-    <div id="post-manual" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--line); text-align: left;">
-      <h4 style="margin-bottom: 10px; font-size: 0.95rem;">Already paid but confirmation is delayed?</h4>
-      <p class="small" style="margin-bottom: 10px;">Enter the M-Pesa receipt code from your SMS (e.g., QK12AB34CD). The admin will verify it and publish your page.</p>
-      <input id="post-manual-receipt" placeholder="Enter M-Pesa Code" style="margin-bottom: 10px; width: 100%; padding: 10px;">
-      <button type="button" class="btn outline" id="submit-post-manual-btn" style="width: 100%;">Verify & Submit</button>
-    </div>
-  </div>
-</div>
-
-<!-- FOOTER -->
 <footer class="footer">
   <div class="container">
     <div class="footer-grid">
@@ -334,20 +256,11 @@
       <span style="margin-left: 10px; font-size: 0.75rem; opacity: 0.5;">
         | <a href="admin.html" style="color: inherit; text-decoration: underline;">Staff Login</a>
       </span>
-      <br><br>
-      <span class="powered-by" style="display: inline-flex; align-items: center; justify-content: center; gap: 10px; margin-top: 16px;">
-        POWERED BY:
-        <a href="https://www.ndandaevents.com/" target="_blank" rel="noopener noreferrer" style="display: inline-block;">
-          <img src="images/ndanda.jpg" alt="Ndanda Events" style="max-height: 45px; width: auto; vertical-align: middle; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-        </a>
-      </span>
     </div>
   </div>
 </footer>
 
-<!-- Add the Supabase Library FIRST -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
 

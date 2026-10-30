@@ -17,11 +17,9 @@
     <a class="logo" href="index.html">
       <img src="images/Tributehub logo.jpeg" alt="Ndanda" class="logo-img">
     </a>
-    <button class="menu-button" aria-label="Menu">☰</button>
     <ul class="menu">
-      <li><a href="index.html" class="active">Home</a></li>
+      <li><a href="index.html">Home</a></li>
       <li><a href="obituaries.html">Obituaries</a></li>
-      <li><a href="index.html#services">Services</a></li>
       <li><a class="btn gold" href="submit.html">Post an obituary</a></li>
     </ul>
   </div>
@@ -30,22 +28,20 @@
 <main class="section">
   <div class="container">
     <!-- LOGIN GATE -->
-    <div id="login-gate" class="panel center" style="max-width: 400px; margin: 40px auto;">
+    <div id="login-gate" class="panel center" style="max-width: 400px; margin: 40px auto; padding: 40px;">
       <h2>Family Dashboard</h2>
-      <p class="small" style="margin-bottom: 20px;">Enter the unique Memorial ID and your Secret PIN to manage this page.</p>
+      <p class="small" style="margin-bottom: 24px;">Sign in with the Google account you used when submitting the obituary to manage the page.</p>
       
-      <input id="login-id" type="text" placeholder="Memorial ID (e.g. john-doe-12345)" style="margin-bottom: 12px;">
-      <input id="login-pin" type="password" placeholder="4-digit Secret PIN" maxlength="4" style="margin-bottom: 12px;">
-      
-      <button class="btn gold" id="login-btn" style="width: 100%;">Access Dashboard</button>
-      <p id="login-error" class="small" style="color: #b3261e; margin-top: 10px; display: none;">Invalid ID or PIN. Please check and try again.</p>
+      <button class="btn outline" id="google-login-btn" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px;">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style="width: 20px;">
+        Sign in with Google
+      </button>
+      <p id="login-error" class="small" style="color: #b3261e; margin-top: 10px; display: none;">Authentication failed. Please try again.</p>
     </div>
 
     <!-- DASHBOARD CONTENT -->
     <div id="dashboard-content" style="display: none;">
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 32px;">
-        
-        <!-- NEW: PHOTO & NAME SECTION -->
         <div style="display: flex; align-items: center; gap: 20px;">
           <div id="dash-avatar-container">
             <img id="dash-photo" src="" alt="Profile Photo" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--gold); box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: none;">
@@ -53,10 +49,9 @@
           </div>
           <div>
             <p class="eyebrow" style="margin-bottom: 4px;">Private Dashboard</p>
-            <h1 id="dash-name" style="margin: 0;">Memorial Name</h1>
+            <h1 id="dash-name" style="margin: 0;">Loading...</h1>
           </div>
         </div>
-
         <div>
           <a id="dash-view-link" class="btn outline" href="#" target="_blank">View Public Page</a>
           <button id="logout-btn" class="btn" style="background: #b3261e; border-color: #b3261e;">Log Out</button>
@@ -64,95 +59,41 @@
       </div>
 
       <div class="two-col">
-        <!-- TRIBUTES MODERATION -->
         <div class="panel">
           <h3>Tributes & Condolences</h3>
-          <p class="small">Review messages left by visitors.</p>
           <div id="dash-tributes" style="margin-top: 20px;"></div>
         </div>
 
-        <!-- FINANCIAL REPORT -->
         <div class="panel" style="background: #faf7f1;">
           <h3>Contribution Report</h3>
-          <p class="small">Download a record of all simulated contributions.</p>
-          
           <div style="background: #fff; padding: 20px; border: 1px solid var(--line); margin: 20px 0;">
             <p style="margin: 0; font-size: 0.9rem;">Total Raised:</p>
             <h2 id="dash-raised" style="color: var(--gold); margin: 0;">KSh 0</h2>
           </div>
-
           <button class="btn gold" id="download-csv" style="width: 100%; margin-bottom: 16px;">⬇ Download CSV Report</button>
+          
+          <!-- PREMIUM SERVICES BLOCK -->
+          <div style="margin-top: 24px; border-top: 1px solid var(--line); padding-top: 16px;">
+            <h4 style="margin-bottom: 8px;">Premium Services</h4>
+            <p class="small" style="margin-bottom: 12px;">Unlock premium features for this memorial.</p>
+            <button class="btn outline" style="width: 100%; margin-bottom: 8px;" onclick="alert('Gallery Upload (KSh 500) requires STK Push integration.')">Add Photo Gallery (KSh 500)</button>
+            <button class="btn outline" style="width: 100%;" onclick="alert('Subscription Management is coming soon.')">Manage Subscriptions</button>
+          </div>
         </div>
       </div>
-
-      <!-- REQUEST AN EDIT SECTION -->
-      <div class="panel" style="margin-top: 32px;">
-        <h3>Request an Edit</h3>
-        <p class="small">To ensure the integrity of the memorial, you cannot edit details directly. Send a message to the Admin below, and they will apply the changes for you.</p>
-        
-        <form id="request-edit-form" style="margin-top: 16px;">
-          <div>
-            <label for="edit-message">What would you like to change? (e.g., "Please update the burial venue to Lang'ata")</label>
-            <textarea id="edit-message" required placeholder="Type your request here..."></textarea>
-          </div>
-          <button class="btn outline" type="submit">Send Request to Admin</button>
-        </form>
-      </div>
-      
     </div>
   </div>
 </main>
 
 <footer class="footer">
   <div class="container">
-    <div class="footer-grid">
-      <div>
-        <a class="logo" href="index.html">
-          <img src="images/Tributehub logo.jpeg" alt="Ndanda" class="logo-img">
-        </a>
-        <p>A place of comfort & remembrance.</p>
-        <p style="margin-top: 12px;">
-          <a href="tel:0792487000" class="btn gold" style="padding: 8px 16px; font-size: .85rem;">📞 Call Ndanda Events</a>
-        </p>
-      </div>
-      <div>
-        <h3>Explore</h3>
-        <ul>
-          <li><a href="obituaries.html">Obituaries</a></li>
-          <li><a href="submit.html">Post an obituary</a></li>
-          <li><a href="index.html#services">Services</a></li>
-        </ul>
-      </div>
-      <div>
-        <h3>Connect</h3>
-        <ul>
-          <li><a href="https://www.facebook.com/mohammad.mawazo/" target="_blank">Facebook Page</a></li>
-          <li><a href="https://www.youtube.com/@ndandaeventsltd911" target="_blank">YouTube Channel</a></li>
-          <li>📞 0792 487000(Ndanda Events)</li>
-        </ul>
-      </div>
-    </div>
     <div class="copy">
       © <span id="year"></span> Tribute Hub. All rights reserved.
-      
-      <span style="margin-left: 10px; font-size: 0.75rem; opacity: 0.5;">
-        | <a href="admin.html" style="color: inherit; text-decoration: underline;">Staff Login</a>
-      </span>
-      
-      <br><br>
-      
-      <span class="powered-by" style="display: inline-flex; align-items: center; justify-content: center; gap: 10px; margin-top: 16px;">
-        POWERED BY:
-        <a href="https://www.ndandaevents.com/" target="_blank" rel="noopener noreferrer" style="display: inline-block;">
-          <img src="images/ndanda.jpg" alt="Ndanda Events" style="max-height: 45px; width: auto; vertical-align: middle; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-        </a>
-      </span>
     </div>
   </div>
 </footer>
-<!-- Add the Supabase Library FIRST -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
 </body>
